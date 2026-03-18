@@ -9,7 +9,11 @@ class TextEmbeddingModel:
         self.model = None
 
     def load(self):
-        self.model = SentenceTransformer('all-MiniLM-L6-v2', device = self.device)
+        # model all-MiniLM-L6-v2 hoạt động tốt trên tiếng Anh
+        # self.model = SentenceTransformer('all-MiniLM-L6-v2', device = self.device)
+
+        # để support multi language, ta dùng model paraphrase-multilingual-MiniLM-L12-v2
+        self.model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2', device=self.device)
 
     def encode(self, text: str):
         # hàm encode sẽ tokenize câu, chạy qua neural network, output vector 384 chiều

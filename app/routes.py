@@ -49,11 +49,19 @@ class SearchRequest(BaseModel):
 # def get_vector_service(request: Request):
 #     return request.app.state.service_registry.get('vector')
 
-def get_vector_service():
-    return service_registry.get('vector')
+# def get_vector_service():
+#     return service_registry.get('vector')
+
+# @router.post('/search')
+# def search(request: SearchRequest, vector_service = Depends(get_vector_service)):
+#     query_vector = model_registry.encode_text(request.query)
+#     result = vector_service.search(query_vector = query_vector, top_k = request.top_k or 5)
+#     return { 'result': result }
+# OR dùng DI trực tiếp
 
 @router.post('/search')
-def search(request: SearchRequest, vector_service = Depends(get_vector_service)):
+def search(request: SearchRequest):
+    vector_service = service_registry.get('vector')
     query_vector = model_registry.encode_text(request.query)
     result = vector_service.search(query_vector = query_vector, top_k = request.top_k or 5)
     return { 'result': result }

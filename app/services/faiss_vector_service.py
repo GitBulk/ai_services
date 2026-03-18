@@ -3,15 +3,20 @@ import pandas as pd
 from app.services.base_vector_service import BaseVectorService
 
 class FaissVectorService(BaseVectorService):
-    def __init__(self, index_path, metadata_path):
+    def __init__(self, index_path, metadata_path, use_cosine: bool = False):
         self.index = faiss.read_index(index_path)
         self.metadata = pd.read_parquet(metadata_path)
+        self.use_cosine = use_cosine
 
     def initialize(self):
         # load index đã làm trong __init__ rồi, nên ở đây không cần xử lý gì
         pass
 
     def search(self, query_vector, top_k = 5):
+        # Nếu dùng cosine similarity, cần normalize vector query
+        if self.use_cosine:
+            faiss.normalize_L2(query_vector)
+
         distances, indices = self.index.search(query_vector, top_k)
 
         results = []

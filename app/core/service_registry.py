@@ -16,7 +16,7 @@ class ServiceRegistry:
 
         # vector service
         if self.settings.VECTOR_BACKEND == 'faiss':
-            self.services['vector'] = FaissVectorService(index_path = self.settings.FAISS_INDEX_PATH, metadata_path = self.settings.FAISS_METADATA_PATH)
+            self.services['vector'] = FaissVectorService(index_path = self.settings.FAISS_INDEX_PATH, metadata_path = self.settings.FAISS_METADATA_PATH, use_cosine = True)
         else:
             self.services['vector'] = InMemoryVectorService(self.text_service)
 

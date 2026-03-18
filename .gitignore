@@ -59,3 +59,8 @@ Thumbs.db
 # --- Logs & Databases ---
 *.log
 *.sqlite3
+data/eng_sentences.tsv.bz2
+data/faiss_multilingual.index
+data/faiss.index
+data/metadata_multilingual.parquet
+data/metadata.parquet
