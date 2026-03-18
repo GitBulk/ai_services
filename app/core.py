@@ -2,6 +2,7 @@ import torch
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from app.models.text_model import TextEmbeddingModel
 from services.text_embedding_service import TextEmbeddingService
+from services.vector_service import VectorService
 
 class Settings(BaseSettings):
     PROJECT_NAME: str =  "Nova AI"
@@ -31,9 +32,11 @@ model_registry = ModelRegistry()
 class ServiceRegistry:
     def __init__(self):
         self.text_service = None
+        self.vector_service = None
 
     def init_services(self, model_registry):
         self.text_service = TextEmbeddingService(model_registry.text_model.model)
+        self.vector_service = VectorService(self.text_service)
 
 # ServiceRegistry → quản lý service
 service_registry = ServiceRegistry()

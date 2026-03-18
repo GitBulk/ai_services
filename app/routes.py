@@ -31,3 +31,13 @@ class SimilarityRequest(BaseModel):
 def similarity(request: SimilarityRequest):
     score = service_registry.text_service.similarity(request.sentence1, request.sentence2)
     return { "score": float(score) }
+
+
+class SearchRequest(BaseModel):
+    query: str
+    top_k: int = 3
+
+@router.post('/search')
+def search(request: SearchRequest):
+    result = service_registry.vector_service.search(request.query, request.top_k)
+    return { 'result': result }
