@@ -1,13 +1,18 @@
 
 import faiss
 import numpy as np
-from services.text_embedding_service import TextEmbeddingService
+from data.sample_data import SAMPLE_DATA
+from app.services.base_vector_service import BaseVectorService
+from app.services.text_embedding_service import TextEmbeddingService
 
-class VectorService:
+class InMemoryVectorService(BaseVectorService):
     def __init__(self, embedding_service: TextEmbeddingService):
         self.embedding_service = embedding_service
         self.index = None
-        self.data = [] # lu7u raw text
+        self.data = [] # lưu raw text
+
+    def initialize(self):
+        self.build_index(SAMPLE_DATA)
 
     def build_index(self, texts: list[str]):
         vectors = [

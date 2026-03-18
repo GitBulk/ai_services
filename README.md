@@ -73,7 +73,10 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 │   ├── __init__.py           # Đánh dấu đây là một Python Package
 │   ├── main.py               # "Trái tim" hệ thống (Khởi tạo FastAPI, nạp Router)
 │   ├── routes.py             # "Controller" (Định nghĩa các API endpoints như /analyze)
-│   ├── core.py               # "Initializer" (Quản lý .env, cấu hình DEVICE: mps)
+|   └── core/                 # "Initializer" (Quản lý .env, cấu hình DEVICE: mps)
+│       └── settings.py
+│       └── model_registry.py
+│       └── service_registry.py
 |   └── models/
 │       └── text_model.py
 │   └── services/             # "Logic tầng thấp"

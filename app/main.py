@@ -1,20 +1,25 @@
 from fastapi import FastAPI
 from app.routes import router as nova_router
-from app.core import settings, model_registry, service_registry
-from data.sample_data import SAMPLE_DATA
+from app.core.settings import settings
+from app.core.model_registry import model_registry
+from app.core.service_registry import service_registry
 
 async def lifespan(app: FastAPI):
     print('[INFO] Starting Nova AI...')
     model_registry.load_models()
     service_registry.init_services(model_registry)
-    service_registry.vector_service.build_index(SAMPLE_DATA)
+
+    # Gán vào app.state để route có thể truy cập
+    # app.state.service_registry = service_registry
+    vector_service = service_registry.get('vector')
+    vector_service.initialize()
+
     print('[INFO] Nova AI ready 🚀')
 
     yield
 
     # (optional) cleanup
     print('[INFO] Shutting down...')
-
 
 app = FastAPI(
     title = settings.PROJECT_NAME,
@@ -24,7 +29,6 @@ app = FastAPI(
 )
 
 app.include_router(nova_router, prefix = '/api/v1', tags = ['Nova Analysis'])
-
 
 @app.get('/')
 async def root():

@@ -13,13 +13,19 @@ run:
 install:
 	$(PYTHON) -m pip install -r requirements.txt
 
-# Lệnh chốt sổ thư viện (Gemfile.lock)
+# Lệnh chốt sổ thư viện requirements.txt tương tự Gemfile.lock
 freeze:
 	$(PYTHON) -m pip freeze > requirements.txt
 
 # Lệnh chạy test
 test:
 	$(PYTHON) -m pytest
+
+semantic_index:
+	$(PYTHON) -m scripts.build_semantic_search_index
+
+multi_language_index:
+	$(PYTHON) -m scripts.build_index_multilingual
 
 # Lệnh dọn dẹp các file rác của Python (__pycache__)
 clean:

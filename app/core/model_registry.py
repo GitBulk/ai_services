@@ -1,0 +1,29 @@
+from app.models.text_model import TextEmbeddingModel
+from app.core.settings import settings
+import numpy as np
+
+class ModelRegistry:
+    def __init__(self):
+        self.models = {}
+
+    def load_models(self):
+        print(f'[INFO] Loading text model on device: {settings.DEVICE}')
+
+        self.models['text_embedding'] = TextEmbeddingModel(settings.DEVICE)
+        self.models['text_embedding'].load()
+
+        print('[INFO] Models loaded')
+
+    def encode_text(self, text: str):
+        text_model = self.get('text_embedding')
+        if text_model is None or text_model.model is None:
+            raise ValueError('Text embedding model chưa được load. Hãy gọi load_models() trước encode_text')
+        vector = text_model.encode(text)
+        return np.array([vector], dtype='float32')
+
+    def get(self, name):
+        return self.models[name]
+
+# ModelRegistry → quản lý model
+model_registry = ModelRegistry()
+
