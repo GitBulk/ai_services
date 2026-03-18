@@ -1,6 +1,9 @@
+from pydantic import BaseModel
 import torch
 from fastapi import APIRouter
 from app.services.processor import processor
+from app.core import service_registry
+from services.text_embedding_service import TextEmbeddingService
 
 router= APIRouter()
 
@@ -19,3 +22,12 @@ async def analyze_document(content: str):
         "processed_on": str(gpu_tensor.device), # Trả về 'mps:0' nếu chạy trên GPU Mac
         "status": "Success"
     }
+
+class SimilarityRequest(BaseModel):
+    sentence1: str
+    sentence2: str
+
+@router.post("/similarity")
+def similarity(request: SimilarityRequest):
+    score = service_registry.text_service.similarity(request.sentence1, request.sentence2)
+    return { "score": float(score) }
