@@ -62,6 +62,8 @@ GPU (MPS) Available: True
 ```
 2. Chạy service
 ```
+make run
+OR
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 **📁 Project structure**
@@ -72,6 +74,8 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 │   ├── main.py               # "Trái tim" hệ thống (Khởi tạo FastAPI, nạp Router)
 │   ├── routes.py             # "Controller" (Định nghĩa các API endpoints như /analyze)
 │   ├── core.py               # "Initializer" (Quản lý .env, cấu hình DEVICE: mps)
+|   └── models/
+│       └── text_model.py
 │   └── services/             # "Logic tầng thấp"
 │       ├── __init__.py
 │       └── processor.py      # Xử lý AI thực thụ (Clean text, move to GPU)
