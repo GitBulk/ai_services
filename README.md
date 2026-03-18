@@ -39,7 +39,26 @@ Chuyển đổi hình ảnh thành Vector không gian 512/768 chiều.
 **Installation**
 1. Cài đặt môi trường:
 ```
+- Tạo môi trường ảo (tên là venv):
+python3.12 -m venv env_nova
+
+- Kích hoạt
+source env_nova/bin/activate
+
+- Kiểm tra python
+python --version
+
+pip install --upgrade pip setuptools wheel
+pip install torch torchvision torchaudio
 pip install -r requirements.txt
+
+- Kiểm tra GPU
+python -c "import torch; print('--- STATUS ---'); print('Python Version:', torch.__version__); print('GPU (MPS) Available:', torch.backends.mps.is_available())"
+
+Output expected:
+--- STATUS ---
+Python Version: 2.10.0
+GPU (MPS) Available: True
 ```
 2. Chạy service
 ```
@@ -48,14 +67,21 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 **📁 Project structure**
 ```
 .
-├── main.py              # Entry point của FastAPI
-├── services/            # Chức năng AI (Strategy Pattern)
-│   ├── base.py          # Abstract Base Class
-│   ├── nsfw_service.py  # ViT-based NSFW detector
-│   └── vector_service.py# Image embedding engine
-├── models/              # Quản lý tải và lưu model
-├── Dockerfile           # Docker configuration
-└── requirements.txt     # Python dependencies
+├── app/
+│   ├── __init__.py           # Đánh dấu đây là một Python Package
+│   ├── main.py               # "Trái tim" hệ thống (Khởi tạo FastAPI, nạp Router)
+│   ├── routes.py             # "Controller" (Định nghĩa các API endpoints như /analyze)
+│   ├── core.py               # "Initializer" (Quản lý .env, cấu hình DEVICE: mps)
+│   └── services/             # "Logic tầng thấp"
+│       ├── __init__.py
+│       └── processor.py      # Xử lý AI thực thụ (Clean text, move to GPU)
+|       └── nsfw_service.py   # ViT-based NSFW detector
+|       └── vector_service.py # Image embedding engine
+├── data/                     # Nơi chứa các Model AI (.pth, .bin) sau này
+├── env_nova/                 # Môi trường ảo (Virtual Environment)
+├── .env                      # Lưu biến môi trường (PROJECT_NAME, VERSION)
+├── .gitignore                # Chặn đẩy env_nova và .env lên Git
+└── requirements.txt          # "Gemfile.lock" (Danh sách thư viện: fastapi, torch, pydantic-settings...)
 ```
 **🛡 Security & Safety**
 - Rate Limiting: Ngăn chặn việc spam request làm treo Model AI.
