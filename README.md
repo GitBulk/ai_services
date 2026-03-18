@@ -8,7 +8,7 @@
 
 Service hoạt động như một microservice độc lập, giao tiếp với Ruby on Rails Backend thông qua giao thức HTTP/JSON.
 
-* **Framework:** FastAPI (Python 3.9+)
+* **Framework:** FastAPI (Python 3+)
 * **AI Engine:** Transformers (HuggingFace), PyTorch.
 * **Pattern:** **Strategy Pattern** (Dễ dàng tích hợp thêm các "Spoke" như OCR, Face Detection mà không ảnh hưởng đến core).
 * **Database:** Hỗ trợ kết nối Vector Database (Qdrant/pgvector) để lưu trữ embedding độc lập.
@@ -32,7 +32,7 @@ Chuyển đổi hình ảnh thành Vector không gian 512/768 chiều.
 
 ## 🚀 Getting Started
 **Prerequisites**
-- Python 3.9+
+- Python 3+
 - Docker & Docker Compose (Khuyên dùng)
 - NVIDIA GPU (Tùy chọn, để tăng tốc xử lý)
 
