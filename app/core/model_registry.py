@@ -9,9 +9,10 @@ class ModelRegistry:
     def load_models(self):
         print(f'[INFO] Loading text model on device: {settings.DEVICE}')
 
-        self.models['text_embedding'] = TextEmbeddingModel(settings.DEVICE)
-        self.models['text_embedding'].load()
+        model = TextEmbeddingModel(settings.DEVICE)
+        model.load()
 
+        self.models['text_embedding'] = model
         print('[INFO] Models loaded')
 
     def encode_text(self, text: str):
