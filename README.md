@@ -84,7 +84,13 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 │       └── processor.py      # Xử lý AI thực thụ (Clean text, move to GPU)
 |       └── nsfw_service.py   # ViT-based NSFW detector
 |       └── vector_service.py # Image embedding engine
-├── data/                     # Nơi chứa các Model AI (.pth, .bin) sau này
+├── data/                     # Nơi chứa các Model AI (.pth, .bin), service chỉ đọc data/current.index, data/current.parquet
+    ├── faiss_20260320_0100.index
+    ├── metadata_20260320_0100.parquet
+    ├── faiss_20260321_0200.index
+    ├── metadata_20260321_0200.parquet
+    ├── current.index     -> symlink
+    └── current.parquet   -> symlink
 ├── env_nova/                 # Môi trường ảo (Virtual Environment)
 ├── .env                      # Lưu biến môi trường (PROJECT_NAME, VERSION)
 ├── .gitignore                # Chặn đẩy env_nova và .env lên Git

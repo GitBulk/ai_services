@@ -5,11 +5,18 @@ import faiss
 from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
 from app.core.settings import settings  # reuse Settings
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--version', required=True)
+args = parser.parse_args()
+
+VERSION = args.version
 
 # ---------------- SETTINGS ----------------
 OUTPUT_DIR = 'data'
-INDEX_PATH = os.path.join(OUTPUT_DIR, 'faiss_multilingual.index')
-META_PATH = os.path.join(OUTPUT_DIR, 'metadata_multilingual.parquet')
+INDEX_PATH = os.path.join(OUTPUT_DIR, f'faiss_{VERSION}.index')
+META_PATH = os.path.join(OUTPUT_DIR, f'metadata_{VERSION}.parquet')
 BATCH_SIZE = 256  # nhỏ hơn để progress update nhanh, Ctrl-C dễ
 
 # Dataset: Tatoeba eng_sentences.tsv
