@@ -58,9 +58,11 @@ print(f"[INFO] Number of vectors in index: {index.ntotal}")
 # ---------------- SAVE INDEX & METADATA ----------------
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 print("[INFO] Saving FAISS index...")
-faiss.write_index(index, INDEX_PATH)
+# faiss.write_index(index, INDEX_PATH)
+faiss.write_index(index, INDEX_PATH, '.tmp')
 
 print("[INFO] Saving metadata...")
-df.to_parquet(META_PATH, index=False)
+# df.to_parquet(META_PATH, index=False)
+df.to_parquet(META_PATH + '.tmp', index=False)
 
 print("[SUCCESS] Multilingual FAISS index built 🚀")
