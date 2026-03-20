@@ -172,7 +172,7 @@ Safe (failures do not impact serving)
 Enables zero-downtime for large index (~GBs)
 ```
 
-## 9. Warmup Phase (Critical for Large Index)
+## 8.2. Warmup Phase (Critical for Large Index)
 After loading the new index, perform a warmup before switching it into serving.
 
 **Why:**
@@ -210,7 +210,57 @@ self.index = new_index
 Only switch to new index AFTER warmup completes successfully
 
 
-## 10. Healthcheck
+## 8.3 Swap Guard (Safety Gate Before Activation)
+
+Before promoting staging_index → active_index, enforce a strict validation layer.
+
+**Goal:**
+- Prevent bad index from going live
+- Detect silent corruption or partial mismatch
+
+**Guard Conditions:**
+1. Vector Count Match
+    - staging_index.ntotal == metadata_row_count
+
+2. Load Time Threshold
+    - Load time within acceptable bound (e.g. < 60s)
+    - Detect abnormal slow loads (disk / corruption issues)
+
+3. Warmup Success
+    - All warmup queries executed without error
+    - Latency within acceptable range
+
+4. Basic Query Sanity Check (Optional but Recommended)
+    - Known query returns expected number of results
+
+Pseudo-code:
+```python
+def swap_if_ready(new_index):
+    if not guard_passed(new_index):
+        log("[DEPLOY] Swap rejected")
+        return
+
+    self.index = new_index
+    log("[DEPLOY] Swap success")
+
+
+def guard_passed(index):
+    return (
+        index.ntotal == expected_count
+        and load_time < MAX_LOAD_TIME
+        and warmup_ok
+    )
+```
+
+Failure Behavior:
+```
+Reject swap
+Keep serving old index
+Log error for investigation
+No rollback needed (system never switched)
+```
+
+## 9. Healthcheck
 
 ### API
 
@@ -236,7 +286,7 @@ curl -f http://localhost:8000/health
 
 ---
 
-## 11. Full Deploy Command
+## 10. Full Deploy Command
 
 ```
 make deploy ENV=prod VERSION=20260320_130501
@@ -250,7 +300,7 @@ build → verify → publish → switch → reload → healthcheck
 
 ---
 
-## 12. Rollback
+## 11. Rollback
 
 ### Scenario: Healthcheck Failed
 
@@ -267,7 +317,7 @@ Reverts instantly to last known-good index.
 
 ---
 
-## 13. Failure Scenarios
+## 12. Failure Scenarios
 
 ### Case 1: Corrupted Index
 
@@ -285,7 +335,7 @@ Reverts instantly to last known-good index.
 
 ---
 
-## 14. Notes
+## 13. Notes
 
 * Never modify `current.*` files directly
 * Always deploy via versioned releases
@@ -308,5 +358,5 @@ It is optimized for:
 * Read-heavy semantic search systems
 
 
-## 16. Future Implementation
+## 15. Future Implementation
 multi-server / rolling deploy (V2 kiến trúc)
