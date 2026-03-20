@@ -47,6 +47,8 @@ run/
       ↓
 [Send SIGHUP]
       ↓
+[Warmup Phase]
+      ↓
 [Healthcheck]
       ↓
    Success / Fail
@@ -113,8 +115,6 @@ ln -sfn data/releases/$VERSION/metadata.parquet data/current.parquet
 
 Atomic pointer switch → no partial state.
 
----
-
 ## 8. Reload (Zero Downtime)
 
 ```
@@ -127,9 +127,90 @@ kill -HUP $(cat run/nova.pid)
 * Reload FAISS index from `current.*`
 * Swap in-memory index
 
----
+## 8.1. Shadow Load (Parallel Index Loading)
 
-## 9. Healthcheck
+Instead of loading index directly into serving path, use shadow loading.
+
+**Goal:**
+- Load new index in parallel
+- Avoid blocking live traffic
+- Isolate failures before affecting users
+
+**Flow:**
+```
+current index (serving)
+        │
+        ├── incoming traffic (unchanged)
+        │
+        └── shadow load → new_index (in background)
+```
+
+**Implementation Concept:**
+
+On SIGHUP:
+```
+Spawn background task/thread
+Load FAISS index into memory → staging_index
+Do NOT touch active_index
+```
+
+Pseudo-code:
+```python
+def handle_sighup():
+    spawn_background_task(load_new_index)
+
+def load_new_index():
+    new_index = load_from_disk("current.index")
+    run_warmup(new_index)
+    swap_if_ready(new_index)
+```
+
+**Key Properties:**
+```
+Non-blocking
+Safe (failures do not impact serving)
+Enables zero-downtime for large index (~GBs)
+```
+
+## 9. Warmup Phase (Critical for Large Index)
+After loading the new index, perform a warmup before switching it into serving.
+
+**Why:**
+- FAISS index may be memory-mapped or lazily loaded
+- First queries can be slow (cold cache)
+- Prevent latency spikes for real users
+
+Warmup Strategy:
+1. Run a set of representative queries
+2. Touch different parts of the index
+3. Ensure memory pages are loaded
+
+Example:
+```bash
+curl -X POST http://localhost:8000/internal/search \
+  -d '{"query": "test query", "top_k": 10}'
+```
+
+Run multiple queries (scripted):
+```
+make warmup-index
+```
+
+**FastAPI internal flow:**
+- Load new index → new_index
+- Run warmup queries on new_index
+- If successful → swap:
+```
+self.index = new_index
+```
+- If failed → discard new index
+
+**Key Rule:**
+
+Only switch to new index AFTER warmup completes successfully
+
+
+## 10. Healthcheck
 
 ### API
 
@@ -155,7 +236,7 @@ curl -f http://localhost:8000/health
 
 ---
 
-## 10. Full Deploy Command
+## 11. Full Deploy Command
 
 ```
 make deploy ENV=prod VERSION=20260320_130501
@@ -169,7 +250,7 @@ build → verify → publish → switch → reload → healthcheck
 
 ---
 
-## 11. Rollback
+## 12. Rollback
 
 ### Scenario: Healthcheck Failed
 
@@ -186,7 +267,7 @@ Reverts instantly to last known-good index.
 
 ---
 
-## 12. Failure Scenarios
+## 13. Failure Scenarios
 
 ### Case 1: Corrupted Index
 
@@ -204,7 +285,7 @@ Reverts instantly to last known-good index.
 
 ---
 
-## 13. Notes
+## 14. Notes
 
 * Never modify `current.*` files directly
 * Always deploy via versioned releases
@@ -213,7 +294,7 @@ Reverts instantly to last known-good index.
 
 ---
 
-## 14. Summary
+## 15. Summary
 
 This deployment model ensures:
 
@@ -227,5 +308,5 @@ It is optimized for:
 * Read-heavy semantic search systems
 
 
-## 15. Future Implementation
+## 16. Future Implementation
 multi-server / rolling deploy (V2 kiến trúc)
