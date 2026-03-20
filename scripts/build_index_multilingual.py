@@ -7,8 +7,9 @@ from tqdm import tqdm
 from app.core.settings import settings  # reuse Settings
 import argparse
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(description='Build FAISS index for Nova AI')
 parser.add_argument('--version', required=True)
+parser.add_argument('--limit', type=int, default=None)
 args = parser.parse_args()
 
 VERSION = args.version
@@ -24,7 +25,7 @@ DATA_PATH = 'data/eng_sentences.tsv.bz2'
 
 # ---------------- LOAD DATA ----------------
 print("[INFO] Loading dataset...")
-df = pd.read_csv(DATA_PATH, sep='\t', header=None, names=['id', 'text'])
+df = pd.read_csv(DATA_PATH, sep='\t', header=None, names=['id', 'text'], nrows=args.limit)
 texts = df['text'].tolist()
 ids = df['id'].tolist()
 print(f"[INFO] Total sentences: {len(texts)}")

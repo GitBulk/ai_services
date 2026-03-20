@@ -93,6 +93,10 @@ build_index:
 	@echo "[INFO] Building index VERSION=$(VERSION), ENV=$(ENV)..."
 	$(PYTHON) scripts/build_index_multilingual.py --version $(VERSION)
 
+build_test_index:
+	@echo "[INFO] Building test index VERSION=$(VERSION)"
+	$(PYTHON) scripts/build_index_multilingual.py --version $(VERSION) --limit 1000
+
 # ================================
 # ATOMIC PUBLISH (SAFE)
 # ================================
