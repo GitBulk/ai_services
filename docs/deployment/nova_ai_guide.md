@@ -1,5 +1,62 @@
 # Nova AI – FAISS Deployment Guide
 
+## 0. Deployment Pipeline (Executive Summary)
+```
+        ┌───────────────┐
+        │   Build Index │
+        └──────┬────────┘
+               ↓
+        ┌───────────────┐
+        │    Verify     │
+        └──────┬────────┘
+               ↓
+        ┌───────────────┐
+        │    Publish    │  (.tmp → mv)
+        └──────┬────────┘
+               ↓
+        ┌───────────────┐
+        │  Symlink      │  (current → new version)
+        │   Switch      │
+        └──────┬────────┘
+               ↓
+        ┌───────────────┐
+        │    Reload     │  (SIGHUP)
+        └──────┬────────┘
+               ↓
+        ┌───────────────┐
+        │ Shadow Load   │  (background)
+        └──────┬────────┘
+               ↓
+        ┌───────────────┐
+        │   Warmup      │  (preload + test queries)
+        └──────┬────────┘
+               ↓
+        ┌───────────────┐
+        │  Swap Guard   │  (validate before promote)
+        └──────┬────────┘
+               ↓
+        ┌───────────────┐
+        │   Promote     │  (candidate → active)
+        └──────┬────────┘
+               ↓
+        ┌───────────────┐
+        │ Healthcheck   │
+        └──────┬────────┘
+               ↓
+        ┌───────────────┐
+        │ Deploy Report │
+        └──────┬────────┘
+               ↓
+        ┌───────────────┐
+        │   SUCCESS     │
+        │   or ABORT    │
+        └───────────────┘
+```
+Failure at any stage before Promote → NO IMPACT (old index still serving)
+
+Failure after Promote → Rollback via symlink + reload
+
+
 ## 1. Mapping Generic → Nova
 
 | Concept            | Nova Implementation                          |
@@ -150,7 +207,7 @@ current index (serving)
 On SIGHUP:
 ```
 Spawn background task/thread
-Load FAISS index into memory → staging_index
+Load FAISS index into memory → candidate_index
 Do NOT touch active_index
 ```
 
@@ -212,7 +269,7 @@ Only switch to new index AFTER warmup completes successfully
 
 ## 8.3 Swap Guard (Safety Gate Before Activation)
 
-Before promoting staging_index → active_index, enforce a strict validation layer.
+Before promoting candidate_index → active_index, enforce a strict validation layer.
 
 **Goal:**
 - Prevent bad index from going live
@@ -220,7 +277,7 @@ Before promoting staging_index → active_index, enforce a strict validation lay
 
 **Guard Conditions:**
 1. Vector Count Match
-    - staging_index.ntotal == metadata_row_count
+    - candidate_index.ntotal == metadata_row_count
 
 2. Load Time Threshold
     - Load time within acceptable bound (e.g. < 60s)
@@ -341,8 +398,53 @@ Reverts instantly to last known-good index.
 * Always deploy via versioned releases
 * Keep at least last 3 versions for rollback
 * Monitor reload time (large FAISS index)
+* Should have report log
 
----
+After each deployment attempt (success or failure), emit a structured deploy report.
+
+**Goal:**
+- Make deployments observable
+- Enable fast debugging
+- Provide audit trail for each version
+
+Example Log:
+```
+[DEPLOY REPORT]
+version: 20260320_130501
+vector_count: 2000000
+load_time: 12.3s
+warmup_avg_latency: 18ms
+warmup_status: OK
+swap_guard: PASSED
+final_status: SUCCESS
+```
+On Failure:
+```
+[DEPLOY REPORT]
+version: 20260320_130501
+vector_count: 1998000
+load_time: 85.2s
+warmup_status: FAILED
+swap_guard: REJECTED
+final_status: ABORTED
+```
+Where to Log:
+- Application logs (stdout / file)
+- Optional: send to monitoring system (ELK, Datadog, etc.)
+
+When to Emit:
+- After warmup
+- After swap decision (pass/fail)
+
+Key Fields:
+```
+version
+vector_count
+load_time
+warmup metrics
+guard result
+final status
+```
 
 ## 15. Summary
 

@@ -19,8 +19,8 @@ class ModelRegistry:
         text_model = self.get('text_embedding')
         if text_model is None or text_model.model is None:
             raise ValueError('Text embedding model chưa được load. Hãy gọi load_models() trước encode_text')
-        vector = text_model.encode(text)
-        return np.array([vector], dtype='float32')
+
+        return text_model.embed(text)
 
     def get(self, name):
         return self.models[name]

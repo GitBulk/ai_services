@@ -10,8 +10,10 @@ async def lifespan(app: FastAPI):
     # load model
     model_registry.load_models()
 
-    # init registry
-    service_registry.init_services(model_registry)
+    resource_manager = VectorResourceManager(index_path=settings.FAISS_INDEX_PATH, metadata_path=settings.FAISS_METADATA_PATH)
+    resource_manager.initialize()
+
+    service_registry.initialize(model_registry, resource_manager)
 
     # setup signals to reload index
     setup_signal_handlers(service_registry, model_registry)

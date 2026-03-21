@@ -9,10 +9,8 @@ class Settings(BaseSettings):
                   'cuda' if torch.cuda.is_available() else 'cpu'
 
     VECTOR_BACKEND: str = 'faiss' # or 'memory'
-    # FAISS_INDEX_PATH: str = 'data/faiss.index'
-    # FAISS_METADATA_PATH: str = 'data/metadata.parquet'
-    FAISS_INDEX_PATH: str = 'data/faiss_multilingual.index'
-    FAISS_METADATA_PATH: str = 'data/metadata_multilingual.parquet'
+    FAISS_INDEX_PATH: str = 'data/current.index'
+    FAISS_METADATA_PATH: str = 'data/current.parquet'
 
     model_config = SettingsConfigDict(env_file = '.env', extra = 'ignore')
 

@@ -20,4 +20,9 @@ class TextEmbeddingModel:
         # câu giống nghĩa -> vector gần nhau, câu khác nghĩa -> vector xa nhau.
         # cách cũ, so sánh chuỗi "cheap phone" ≠ "budget smartphone"
         # còn giờ, với vector thì vector("cheap phone") ≈ vector("budget smartphone")
+        # (dim,)
         return self.model.encode(text)
+
+    def embed(self, text: str):
+        # (1, dim)
+        return self.model.encode([text]).astype('float32')

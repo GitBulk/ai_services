@@ -9,14 +9,14 @@ class ServiceRegistry:
         self.settings = settings
         self.services = {}
 
-    def init_services(self, model_registry):
+    def initialize(self, model_registry, resource_manager):
         # text service
-        text_model = model_registry.get('text_embedding').model
+        text_model = model_registry.get('text_embedding')
         self.services['text'] = TextEmbeddingService(text_model)
 
         # vector service
         if self.settings.VECTOR_BACKEND == 'faiss':
-            self.services['vector'] = FaissVectorService(index_path = self.settings.FAISS_INDEX_PATH, metadata_path = self.settings.FAISS_METADATA_PATH, use_cosine = True)
+            self.services['vector'] = FaissVectorService(resource_manager=resource_manager, use_cosine = True)
         else:
             self.services['vector'] = InMemoryVectorService(self.text_service)
 
