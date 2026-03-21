@@ -4,6 +4,7 @@ from app.routes import router as nova_router
 from app.core.settings import settings
 from app.core.model_registry import model_registry
 from app.core.service_registry import service_registry
+from app.services.vector_resource_manager import VectorResourceManager
 
 async def lifespan(app: FastAPI):
     print('[INFO] Starting Nova AI...')
