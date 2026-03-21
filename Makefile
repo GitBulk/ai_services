@@ -1,12 +1,15 @@
 # ================================
 # CONFIG
 # ================================
-PYTHON = ./env_nova/bin/python
-UVICORN = ./env_nova/bin/uvicorn
+# PYTHON = ./env_nova/bin/python
+# UVICORN = ./env_nova/bin/uvicorn
+PYTHON =  python
+UVICORN = uvicorn
+
 APP_MODULE = app.main:app
 # folder data trong project
 DATA_DIR = data
-PID_FILE = nova.pid
+PID_FILE = tmp/pids/nova.pid
 
 # ENV (default: dev)
 ENV ?= dev
@@ -21,16 +24,26 @@ META_FILE = metadata_$(VERSION).parquet
         install freeze test clean \
         build_index deploy link current rollback rollback_last clean_index
 
+define CHECK_PID
+	if [ ! -f $(PID_FILE) ]; then \
+		echo "❌ PID file not found"; exit 1; \
+	fi; \
+	PID=$$(cat $(PID_FILE)); \
+	if ! kill -0 $$PID 2>/dev/null; then \
+		echo "❌ Process $$PID not running"; exit 1; \
+	fi;
+endef
+
 # ================================
 # DEV / RUN
 # ================================
-
 run:
 ifeq ($(ENV),dev)
 	@echo "[INFO] Running in DEV mode (ENV=$(ENV))..."
 	$(UVICORN) $(APP_MODULE) --reload --host 0.0.0.0 --port 8000
 else
 	@echo "[INFO] Running in $(ENV) mode..."
+	@mkdir -p tmp/pids
 	$(UVICORN) $(APP_MODULE) --host 0.0.0.0 --port 8000 & echo $$! > $(PID_FILE)
 endif
 
@@ -41,7 +54,14 @@ ifeq ($(ENV),dev)
 else
 	@echo "[INFO] Stopping service..."
 	@if [ -f $(PID_FILE) ]; then \
-		kill $$(cat $(PID_FILE)) && rm -f $(PID_FILE); \
+		PID=$$(cat $(PID_FILE)); \
+		if kill -0 $$PID 2>/dev/null; then \
+			kill $$PID && rm -f $(PID_FILE); \
+			echo "[SUCCESS] Stopped $$PID"; \
+		else \
+			echo "⚠️ Process not running"; \
+			rm -f $(PID_FILE); \
+		fi \
 	else \
 		echo "⚠️ No PID file found"; \
 	fi
@@ -55,10 +75,9 @@ ifeq ($(ENV),dev)
 	@echo "⚠️ Reload not supported in dev (--reload mode)"
 else
 	@echo "[INFO] Reloading service..."
-	@if [ ! -f $(PID_FILE) ]; then \
-		echo "❌ PID file not found"; exit 1; \
-	fi
+	@$(CHECK_PID)
 	kill -HUP $$(cat $(PID_FILE))
+	@echo "[SUCCESS] Reload signal sent 🚀"
 endif
 
 
@@ -156,6 +175,7 @@ rollback:
 	@echo "[INFO] Rolling back to VERSION=$(VERSION)..."
 	ln -sfn faiss_$(VERSION).index $(DATA_DIR)/current.index
 	ln -sfn metadata_$(VERSION).parquet $(DATA_DIR)/current.parquet
+	@$(CHECK_PID)
 	kill -HUP $$(cat $(PID_FILE))
 	@echo "[SUCCESS] Rolled back to $(VERSION) 🚀"
 
@@ -176,7 +196,7 @@ rollback_last:
 
 	ln -sfn $$(basename $$PREV_INDEX) $(DATA_DIR)/current.index; \
 	ln -sfn $$(basename $$PREV_META) $(DATA_DIR)/current.parquet; \
-	kill -HUP $$(cat $(PID_FILE)); \
+	$(MAKE) reload; \
 
 	echo "[SUCCESS] Rolled back to previous version 🚀"
 
