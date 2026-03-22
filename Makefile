@@ -16,9 +16,9 @@ ENV ?= dev
 export ENV
 
 # VERSION (cho index)
-VERSION ?= $(shell date +%Y%m%d_%H%M%S)
-INDEX_FILE = faiss_$(VERSION).index
-META_FILE = metadata_$(VERSION).parquet
+INDEX_VERSION ?= $(shell date +%Y%m%d_%H%M%S)
+INDEX_FILE = faiss_$(INDEX_VERSION).index
+META_FILE = metadata_$(INDEX_VERSION).parquet
 
 .PHONY: run stop restart reload \
         install freeze test clean \
@@ -109,12 +109,12 @@ semantic_index:
 	$(PYTHON) -m scripts.build_semantic_search_index
 
 build_index:
-	@echo "[INFO] Building index VERSION=$(VERSION), ENV=$(ENV)..."
-	$(PYTHON) scripts/build_index_multilingual.py --version $(VERSION)
+	@echo "[INFO] Building index VERSION=$(INDEX_VERSION), ENV=$(ENV)..."
+	$(PYTHON) scripts/build_index_multilingual.py --version $(INDEX_VERSION)
 
 build_test_index:
-	@echo "[INFO] Building test index VERSION=$(VERSION)"
-	$(PYTHON) scripts/build_index_multilingual.py --version $(VERSION) --limit 1000
+	@echo "[INFO] Building test index VERSION=$(INDEX_VERSION)"
+	$(PYTHON) scripts/build_index_multilingual.py --version $(INDEX_VERSION) --limit 1000
 
 # ================================
 # ATOMIC PUBLISH (SAFE)
@@ -128,7 +128,7 @@ publish:
 # SYMLINK SWITCH
 # ================================
 link:
-	@echo "[INFO] Switching symlink to VERSION=$(VERSION)..."
+	@echo "[INFO] Switching symlink to VERSION=$(INDEX_VERSION)..."
 	ln -sfn $(INDEX_FILE) $(DATA_DIR)/current.index
 	ln -sfn $(META_FILE) $(DATA_DIR)/current.parquet
 
@@ -153,7 +153,7 @@ link:
 
 deploy:
 	build_index publish link reload
-	@echo "[SUCCESS] Deploy VERSION=$(VERSION) 🚀"
+	@echo "[SUCCESS] Deploy VERSION=$(INDEX_VERSION) 🚀"
 
 # ================================
 # DEBUG
@@ -169,15 +169,15 @@ current:
 # make rollback VERSION=20260319_0200
 # ================================
 rollback:
-	@if [ -z "$(VERSION)" ]; then \
+	@if [ -z "$(INDEX_VERSION)" ]; then \
 		echo "Please provide VERSION=..."; exit 1; \
 	fi
-	@echo "[INFO] Rolling back to VERSION=$(VERSION)..."
-	ln -sfn faiss_$(VERSION).index $(DATA_DIR)/current.index
-	ln -sfn metadata_$(VERSION).parquet $(DATA_DIR)/current.parquet
+	@echo "[INFO] Rolling back to VERSION=$(INDEX_VERSION)..."
+	ln -sfn faiss_$(INDEX_VERSION).index $(DATA_DIR)/current.index
+	ln -sfn metadata_$(INDEX_VERSION).parquet $(DATA_DIR)/current.parquet
 	@$(CHECK_PID)
 	kill -HUP $$(cat $(PID_FILE))
-	@echo "[SUCCESS] Rolled back to $(VERSION) 🚀"
+	@echo "[SUCCESS] Rolled back to $(INDEX_VERSION) 🚀"
 
 # ================================
 # Lấy version trước đó để rollback
