@@ -25,17 +25,22 @@ DATA_PATH = 'data/eng_sentences.tsv.bz2'
 
 # ---------------- LOAD DATA ----------------
 print("[INFO] Loading dataset...")
-df = pd.read_csv(DATA_PATH, sep='\t', header=None, names=['id', 'text'], nrows=args.limit)
+df = pd.read_csv(DATA_PATH, sep='\t', header=None, names=['id', 'lang', 'text'], nrows=args.limit)
+
+# clean data
+df = df.dropna(subset=['text'])
+df = df[df['text'].str.strip() != '']
+
+# normalize id
+df['id'] = 'eng_' + df['id'].astype(str)
+
+# keep only needed columns
 texts = df['text'].tolist()
-ids = df['id'].tolist()
 print(f"[INFO] Total sentences: {len(texts)}")
 
 # ---------------- LOAD MODEL ----------------
 print(f"[INFO] Loading multilingual embedding model on {settings.DEVICE} ...")
-model = SentenceTransformer(
-    'paraphrase-multilingual-MiniLM-L12-v2',
-    device=settings.DEVICE
-)
+model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2', device=settings.DEVICE)
 
 # ---------------- ENCODING ----------------
 vectors = []
@@ -58,12 +63,16 @@ print(f"[INFO] Number of vectors in index: {index.ntotal}")
 
 # ---------------- SAVE INDEX & METADATA ----------------
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+index_tmp_path = INDEX_PATH + ".tmp"
+meta_tmp_path = META_PATH + ".tmp"
+
 print("[INFO] Saving FAISS index...")
-# faiss.write_index(index, INDEX_PATH)
-faiss.write_index(index, INDEX_PATH, '.tmp')
+faiss.write_index(index, index_tmp_path)
 
 print("[INFO] Saving metadata...")
-# df.to_parquet(META_PATH, index=False)
-df.to_parquet(META_PATH + '.tmp', index=False)
+df.to_parquet(meta_tmp_path, index=False)
+
+os.replace(index_tmp_path, INDEX_PATH)
+os.replace(meta_tmp_path, META_PATH)
 
 print("[SUCCESS] Multilingual FAISS index built 🚀")
