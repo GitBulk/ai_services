@@ -1,5 +1,9 @@
 from app.core.settings import settings
 from app.services.faiss_vector_service import FaissVectorService
+from app.services.ranking.cross_encoder_reranker import CrossEncoderReranker
+from app.services.ranking.heuristic_reranker import HeuristicReranker
+from app.services.retrieval.retriever import Retriever
+from app.services.search_service import SearchService
 from app.services.text_embedding_service import TextEmbeddingService
 from app.services.in_memory_vector_service import InMemoryVectorService
 
@@ -19,6 +23,14 @@ class ServiceRegistry:
             self.services['vector'] = FaissVectorService(resource_manager=resource_manager, use_cosine = True)
         else:
             self.services['vector'] = InMemoryVectorService(self.text_service)
+
+        if self.settings.RERANKER == 'cross':
+            self.services['reranker'] = CrossEncoderReranker()
+        else:
+            self.services['reranker'] = HeuristicReranker()
+
+        self.services['retriever'] = Retriever(vector_service=self.services['vector'], text_service=self.services['text'])
+        self.services['search'] = SearchService(retriever=self.services['retriever'], reranker=self.services['reranker'])
 
     def get(self, name):
         return self.services[name]

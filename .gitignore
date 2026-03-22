@@ -66,3 +66,5 @@ data/metadata_multilingual.parquet
 data/metadata.parquet
 data/current.parquet
 data/current.index
+data/faiss_*.index
+data/metadata_*.parquet

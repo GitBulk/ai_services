@@ -65,3 +65,9 @@ def search(request: SearchRequest):
     query_vector = model_registry.encode_text(request.query)
     result = vector_service.search(query_vector = query_vector, top_k = request.top_k or 5)
     return { 'result': result }
+
+
+@router.get('/search/debug')
+def debug_search(query: str):
+    search_service = service_registry.get('search')
+    return search_service.debug_search(query)

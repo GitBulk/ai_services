@@ -80,6 +80,11 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 |   └── models/
 │       └── text_model.py
 │   └── services/             # "Logic tầng thấp"
+|       └── ranking/
+|           └── heuristic_reranker.py
+|           └── corss_encoder_reranker.py
+|       └── retrieval/
+|           └── retriever.py
 │       ├── __init__.py
 │       └── processor.py      # Xử lý AI thực thụ (Clean text, move to GPU)
 |       └── nsfw_service.py   # ViT-based NSFW detector
