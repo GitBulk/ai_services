@@ -101,6 +101,41 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ├── .gitignore                # Chặn đẩy env_nova và .env lên Git
 └── requirements.txt          # "Gemfile.lock" (Danh sách thư viện: fastapi, torch, pydantic-settings...)
 ```
+
+**ruff - linter, formater code**
+- Please check rule in pyproject.toml
+- Kiểm tra lỗi Linting
+```bash
+# Quét 2 file cùng lúc
+ruff check app/routes.py scripts/build_product_index.py
+
+# Quét riêng thư mục models
+ruff format app/models/
+```
+- Tự động fix lỗi
+```bash
+ruff check --fix app/routes.py
+```
+
+**Config Workspace Settings**
+
+.vscode/settings.json
+```json
+{
+    "python.analysis.extraPaths": ["./"],
+    "python.autoComplete.extraPaths": ["./"],
+
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.fixAll": "explicit",
+            "source.organizeImports": "explicit"
+        }
+    }
+}
+```
+
 **🛡 Security & Safety**
 - Rate Limiting: Ngăn chặn việc spam request làm treo Model AI.
 - Circuit Breaker: Ngưỡng chặn tự động 500 bản sao (d=0) trước khi yêu cầu can thiệp thủ công.

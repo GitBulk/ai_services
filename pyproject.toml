@@ -1,0 +1,33 @@
+[tool.ruff]
+# Giới hạn độ dài mỗi dòng code (100 ký tự là đẹp cho màn hình dev hiện đại)
+line-length = 100
+
+# Phiên bản Python mục tiêu của dự án (Giả sử bạn đang dùng Python 3.10+)
+target-version = "py310"
+
+# Bỏ qua không quét các thư mục này
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+]
+
+[tool.ruff.lint]
+# Các bộ luật sẽ được bật (Ruff gom hàng chục tool cũ vào các mã chữ cái)
+select = [
+    "E",   # Lỗi phong cách code cơ bản (pycodestyle)
+    "F",   # Bắt lỗi biến thừa, import rác (Pyflakes)
+    "I",   # Tự động sắp xếp Import theo thứ tự A-Z (isort)
+    "UP",  # Tự động nâng cấp cú pháp Python lên bản mới nhất (pyupgrade)
+    "B",   # Bắt các bug tiềm ẩn ngớ ngẩn (flake8-bugbear)
+]
+
+# Các luật ngoại lệ (Nếu có luật nào quá gắt, bạn thêm vào đây để bỏ qua)
+ignore = []
+
+[tool.ruff.format]
+# Dùng nháy kép cho chuỗi (giống chuẩn của Black formatter)
+quote-style = "double"
+# Thêm dấu phẩy ở phần tử cuối cùng của list/dict cho dễ đọc
+skip-magic-trailing-comma = false
