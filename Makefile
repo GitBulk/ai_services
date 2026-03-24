@@ -20,6 +20,9 @@ INDEX_VERSION ?= $(shell date +%Y%m%d_%H%M%S)
 INDEX_FILE = faiss_$(INDEX_VERSION).index
 META_FILE = metadata_$(INDEX_VERSION).parquet
 
+PRODUCT_INDEX_FILE = faiss_products_$(INDEX_VERSION).index
+PRODUCT_META_FILE = metadata_products_$(INDEX_VERSION).parquet
+
 .PHONY: run stop restart reload \
         install freeze test clean \
         build_index deploy link current rollback rollback_last clean_index
@@ -131,6 +134,11 @@ link:
 	@echo "[INFO] Switching symlink to VERSION=$(INDEX_VERSION)..."
 	ln -sfn $(INDEX_FILE) $(DATA_DIR)/current.index
 	ln -sfn $(META_FILE) $(DATA_DIR)/current.parquet
+
+symlink_product_index:
+	@echo "[INFO] Switching symlink to VERSION=$(INDEX_VERSION)..."
+	ln -sfn $(PRODUCT_INDEX_FILE) $(DATA_DIR)/products_current.index
+	ln -sfn $(PRODUCT_META_FILE) $(DATA_DIR)/products_current.parquet
 
 
 # ================================

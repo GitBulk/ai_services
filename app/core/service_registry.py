@@ -20,16 +20,17 @@ class ServiceRegistry:
 
         # vector service
         if self.settings.VECTOR_BACKEND == 'faiss':
-            self.services['vector'] = FaissVectorService(resource_manager=resource_manager, use_cosine = True)
+            self.services['text_vector'] = FaissVectorService(resource_manager=resource_manager, index_name='text', use_cosine = True)
+            self.services['product_vector'] = FaissVectorService(resource_manager=resource_manager, index_name='product', use_cosine = True)
         else:
-            self.services['vector'] = InMemoryVectorService(self.text_service)
+            self.services['text_vector'] = InMemoryVectorService(self.text_service)
 
         if self.settings.RERANKER == 'cross':
             self.services['reranker'] = CrossEncoderReranker()
         else:
             self.services['reranker'] = HeuristicReranker()
 
-        self.services['retriever'] = Retriever(vector_service=self.services['vector'], text_service=self.services['text'])
+        self.services['retriever'] = Retriever(vector_service=self.services['text_vector'], text_service=self.services['text'])
         self.services['search'] = SearchService(retriever=self.services['retriever'], reranker=self.services['reranker'])
 
     def get(self, name):

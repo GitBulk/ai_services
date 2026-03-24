@@ -3,15 +3,16 @@ import pandas as pd
 from app.services.base_vector_service import BaseVectorService
 
 class FaissVectorService(BaseVectorService):
-    def __init__(self, resource_manager, use_cosine: bool = False):
+    def __init__(self, resource_manager, index_name: str, use_cosine: bool = False):
         self.rm = resource_manager
+        self.index_name = index_name
         self.use_cosine = use_cosine
 
-    def search(self, query_vector, top_k = 5):
-        index, metadata = self.rm.resources
+    def search(self, query_vector, top_k=5):
+        index, metadata = self.rm.get_resource(self.index_name)
 
-        if index is None:
-            raise RuntimeError('Index not initialized')
+        if index is None or metadata is None:
+            raise RuntimeError(f"Index or Metadata '{self.index_name}' not initialized")
 
         # Nếu dùng cosine similarity, cần normalize vector query
         if self.use_cosine:
@@ -28,7 +29,7 @@ class FaissVectorService(BaseVectorService):
         # return results
         rows = metadata.iloc[indices[0]].to_dict('records')
         for row, dist in zip(rows, distances[0]):
-            row["score"] = float(dist)
+            row['score'] = float(dist)
 
         return rows
 

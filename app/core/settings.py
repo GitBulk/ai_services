@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     VECTOR_BACKEND: str = 'faiss' # or 'memory'
     FAISS_INDEX_PATH: str = 'data/current.index'
     FAISS_METADATA_PATH: str = 'data/current.parquet'
+    PRODUCT_FAISS_INDEX_PATH: str = 'data/products_current.index'
+    PRODUCT_FAISS_METADATA_PATH: str = 'data/products_current.parquet'
     RERANKER: str = 'cross'
     model_config = SettingsConfigDict(env_file = '.env', extra = 'ignore')
 

@@ -68,3 +68,6 @@ data/current.parquet
 data/current.index
 data/faiss_*.index
 data/metadata_*.parquet
+data/products_current.parquet
+data/products_current.index
+data/products_for_ai.jsonl

@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Request
 # from app.core import service_registry
 from app.core.service_registry import service_registry
 from app.core.model_registry import model_registry
+from app.schemas.product import ProductSearchRequest
 from app.services import processor
 from app.services.text_embedding_service import TextEmbeddingService
 
@@ -61,7 +62,7 @@ class SearchRequest(BaseModel):
 
 @router.post('/search')
 def search(request: SearchRequest):
-    vector_service = service_registry.get('vector')
+    vector_service = service_registry.get('text_vector')
     query_vector = model_registry.encode_text(request.query)
     result = vector_service.search(query_vector = query_vector, top_k = request.top_k or 5)
     return { 'result': result }
