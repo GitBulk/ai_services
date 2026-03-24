@@ -26,7 +26,7 @@ class VectorMultiResourceManager:
                 'metadata_path': self.settings.PRODUCT_FAISS_METADATA_PATH
             }
 
-        # support multi model
+        # support multi indexes
         # Trạng thái atomic dạng dict: {'text': (index, metadata), 'product': (index, metadata)}
         self._active = {}
 
@@ -53,9 +53,12 @@ class VectorMultiResourceManager:
         return self._active.get(name, (None, None))
 
     def reload_async(self):
-        if self._is_reloading:
-            print('[RELOAD] Already in progress, skip')
-            return
+        with self._lock:
+            if self._is_reloading:
+                print('[RELOAD] Already in progress, skip')
+                return
+
+            self._is_reloading = True
 
         threading.Thread(target=self._reload_pipeline, daemon=True).start()
 
@@ -87,11 +90,9 @@ class VectorMultiResourceManager:
             try:
                 # grace period
                 time.sleep(5)
-                for old_index, old_metadata in old_resources_list:
-                    del old_index
-                    del old_metadata
+                old_resources_list.clear()
                 gc.collect()
-                print(f'[CLEANUP] {len(old_resources_list)} old resources released')
+                print(f'[CLEANUP] Old resources released safely')
             except Exception as e:
                 print(f'[CLEANUP ERROR] {e}')
 
@@ -103,17 +104,18 @@ class VectorMultiResourceManager:
             start = time.time()
             print('[RELOAD] Start multi-index pipeline')
             try:
+                # Copy shallow từ _active hiện tại
                 new_active = dict(self._active)
                 old_resources_to_cleanup = []
 
                 for name, config in self.configs.items():
                     try:
                         if not os.path.exists(config['index_path']):
-                            print(f'[RELOAD] Missing file index {config['index_path']} for {name}. Skip reloading this component.')
+                            print(f'[RELOAD] Missing file index {config["index_path"]} for {name}. Skip reloading this component.')
                             continue
 
                         if not os.path.exists(config['metadata_path']):
-                            print(f'[RELOAD] Missing file metadata {config['metadata_path']} for {name}. Skip reloading this component.')
+                            print(f'[RELOAD] Missing file metadata {config["metadata_path"]} for {name}. Skip reloading this component.')
                             continue
 
                         new_index, new_metadata = self._load(config['index_path'], config['metadata_path'])
@@ -121,7 +123,7 @@ class VectorMultiResourceManager:
                         self._warmup(new_index)
 
                         # Nếu đã có bản cũ đang chạy, đưa vào danh sách chờ xóa
-                        if name in new_index:
+                        if name in new_active:
                             old_resources_to_cleanup.append(new_active[name])
 
                         new_active[name] = (new_index, new_metadata)
@@ -148,4 +150,6 @@ class VectorMultiResourceManager:
             except Exception as e:
                 print(f'[RELOAD] Failed: {e}')
             finally:
-                self._is_reloading = False
+                # Trả lại cờ để cho phép reload lần sau
+                with self._lock:
+                    self._is_reloading = False
