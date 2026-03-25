@@ -70,4 +70,5 @@ data/faiss_*.index
 data/metadata_*.parquet
 data/products_current.parquet
 data/products_current.index
-data/products_for_ai.jsonl
+data/products_for_ai*.jsonl
+data/faiss_products*.config.json
