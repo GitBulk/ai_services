@@ -4,6 +4,7 @@ from app.services.in_memory_vector_service import InMemoryVectorService
 from app.services.ranking.cross_encoder_reranker import CrossEncoderReranker
 from app.services.ranking.heuristic_reranker import HeuristicReranker
 from app.services.retrieval.retriever import Retriever
+from app.services.scam_detection_service import ScamDetectionService
 from app.services.search_service import SearchService
 from app.services.text_embedding_service import TextEmbeddingService
 
@@ -40,7 +41,7 @@ class ServiceRegistry:
         )
 
         # scam detection service
-        # self.services["scam_detection"] = ScamDetectionService()
+        self.services["scam_detection"] = ScamDetectionService()
 
     def get(self, name):
         return self.services[name]
