@@ -216,3 +216,6 @@ clean_index:
 	@echo "[INFO] Cleaning old index files..."
 	ls -t $(DATA_DIR)/faiss_*.index | tail -n +4 | xargs rm -f
 	ls -t $(DATA_DIR)/metadata_*.parquet | tail -n +4 | xargs rm -f
+
+console:
+	$(PYTHON) scripts/console.py

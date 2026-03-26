@@ -77,6 +77,9 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 │       └── settings.py
 │       └── model_registry.py
 │       └── service_registry.py
+│       └── config.py         # Tương đương database.yml + secrets.yml
+|   └── db/
+│       ├── session.py        # Sử dụng config để tạo engine
 |   └── models/
 │       └── text_model.py
 │   └── services/             # "Logic tầng thấp"
@@ -100,6 +103,41 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ├── .env                      # Lưu biến môi trường (PROJECT_NAME, VERSION)
 ├── .gitignore                # Chặn đẩy env_nova và .env lên Git
 └── requirements.txt          # "Gemfile.lock" (Danh sách thư viện: fastapi, torch, pydantic-settings...)
+```
+
+**Database Migration**
+```bash
+pip install alembic
+alembic init alembic
+```
+Sửa database url trong `alembic/env.py`
+```python
+# Trong file alembic/env.py
+from app.core.settings import settings
+from app.db.session import Base
+# Import các model của bạn vào đây để Alembic tự động nhận diện (Autogenerate)
+from app.models.training import NovaTrainingData 
+
+config = context.config
+# Nạp URL từ Settings trơn của bạn
+config.set_main_option("sqlalchemy.url", settings.database_url)
+
+target_metadata = Base.metadata # Để dùng tính năng tự tạo migration
+```
+Tạo file migration
+```bash
+alembic revision -m "create_recommendation_configs_table"
+```
+xem file alembic/versions/93f29d2de824_create_recommendation_configs_table.py
+
+Kiểm tra lệnh SQL mà Alembic sẽ chạy
+```bash
+alembic upgrade head --sql
+```
+
+Chạy migration
+```bash
+alembic upgrade head
 ```
 
 **ruff - linter, formater code**
