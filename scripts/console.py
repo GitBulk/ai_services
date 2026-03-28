@@ -4,7 +4,12 @@ import sys
 import IPython
 from traitlets.config import Config
 
+from app.core.settings import settings
+from app.db.qdrant_db import get_qdrant_db
 from app.db.session import SessionLocal, engine
+from app.dependencies.ai_model import get_ai_model_registry
+from app.dependencies.repositories import get_product_repository, get_product_vector_repository
+from app.dependencies.services import get_product_service
 from app.models.blue_green_config import BlueGreeConfig
 
 # Thêm thư mục gốc của project vào sys.path để import được app
@@ -18,7 +23,6 @@ try:
     # from app.models.user import User
     # Thêm công cụ debug để in dữ liệu đẹp hơn rails c
     from devtools import debug
-    from qdrant_client import QdrantClient
 
     # from app.ai.nova_ai_classifier import NovaAIClassifier
 except ImportError as e:
@@ -28,8 +32,14 @@ except ImportError as e:
 # Khởi tạo Context (Các biến dùng trực tiếp trong shell)
 db = SessionLocal()
 # nova = NovaAIClassifier()  # Nạp sẵn model DeBERTa
-qdrant = QdrantClient("localhost", port=6333)
-
+qdrant_db = get_qdrant_db()
+product_repo = get_product_repository(db)
+vector_repo = get_product_vector_repository(qdrant_db)
+print("🧠 Đang nạp AI Models vào RAM (Vui lòng đợi vài giây)...")
+ai_model = get_ai_model_registry()
+ai_model.load_models()
+ai_model.use_model("clip_embedding")
+product_service = get_product_service(product_repo, vector_repo, ai_model)
 # Dictionary chứa các biến sẽ nạp vào shell
 # Bạn gõ tên key nào thì nó ra object đó (vd: gõ User sẽ ra class User)
 namespace = {
@@ -39,8 +49,10 @@ namespace = {
     # "Message": Message,
     # "Training": NovaTrainingData,
     # "NovaAIClassifier": nova,  # Load luôn bộ não AI vào RAM
-    "qdrant": qdrant,
+    # "qdrant_db": qdrant_db,
+    "product_service": product_service,
     "debug": debug,
+    "settings": settings,
     "os": os,
     "engine": engine,
 }

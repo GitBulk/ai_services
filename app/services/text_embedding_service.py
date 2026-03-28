@@ -1,17 +1,19 @@
 import numpy as np
+
+
 class TextEmbeddingService:
     def __init__(self, model):
         self.model = model
 
     def encode(self, text: str):
         if self.model is None:
-            raise RuntimeError('Model not initialized')
+            raise RuntimeError("Model not initialized")
 
         return self.model.encode(text)
 
     def embed(self, text: str):
         if self.model is None:
-            raise RuntimeError('Model not initialized')
+            raise RuntimeError("Model not initialized")
 
         return self.model.embed(text)
 
