@@ -11,10 +11,13 @@ class Settings(BaseSettings):
 
     VECTOR_BACKEND: str = "qdrant"  # 'memory' | faiss | qdrant
     # --- Qdrant Config ---
-    QDRANT_HOST: str = "localhost"
-    QDRANT_PORT: int = 6333
+    QDRANT_URL: str = "QDRANT_URL"
+    QDRANT_API_KEY: str = "QDRANT_API_KEY"
+    QDRANT_ENVIRONMENT: str = "dev"  # dev | staging | production
+    TEXT_WEIGHT: float = 0.5
+    IMAGE_WEIGHT: float = 0.5
 
-    # Giữ lại các path FAISS nếu muốn dùng song song
+    # Giữ lại các path FAISS nếu muốn dùng parallel
     FAISS_INDEX_PATH: str = "data/current.index"
     FAISS_METADATA_PATH: str = "data/current.parquet"
     PRODUCT_FAISS_INDEX_PATH: str = "data/products_current.index"
