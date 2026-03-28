@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     DB_PORT: str = "5432"
     DB_NAME: str = "nova_db_name"
 
+    # Redis
+    REDIS_HOST: str = "REDIS_HOST"
+    REDIS_PORT: str = "REDIS_PORT"
+
     @property
     def database_url(self) -> str:
         return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
