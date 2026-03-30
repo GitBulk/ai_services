@@ -39,7 +39,10 @@ app = FastAPI(
     lifespan = lifespan
 )
 
-app.include_router(nova_router, prefix = '/api/v1', tags = ['Nova Analysis'])
+# add middlewares
+# app.add_middleware(TracingMiddleware)
+app.include_router(nova_router, prefix="/api/v1", tags=["Nova Analysis"])
+
 
 @app.get('/')
 async def root():
