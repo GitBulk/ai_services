@@ -105,7 +105,9 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 └── requirements.txt          # "Gemfile.lock" (Danh sách thư viện: fastapi, torch, pydantic-settings...)
 ```
 
-**Database Migration**
+**Database Migration:**
+
+***1. Relation db (Postgres 9.5)***
 ```bash
 pip install alembic
 alembic init alembic
@@ -138,6 +140,21 @@ alembic upgrade head --sql
 Chạy migration
 ```bash
 alembic upgrade head
+```
+
+***2. Qdrant DB***
+```bash
+pip install -e .
+```
+Quy trình tạo migration với Qdrant:
+- Tạo file migration:
+```bash
+qdrant migrate -m "tên_thay_đổi"
+```
+- Viết code: Mở file trong versions/, dùng các helper như self.add_index(...) hoặc self.create_col(...).
+- Chạy migration:
+```bash
+qdrant migrate --up
 ```
 
 **ruff - linter, formater code**
