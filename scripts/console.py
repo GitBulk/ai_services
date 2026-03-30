@@ -11,6 +11,7 @@ from app.dependencies.ai_model import get_ai_model_registry
 from app.dependencies.repositories import get_product_repository, get_product_vector_repository
 from app.dependencies.services import get_product_service
 from app.models.blue_green_config import BlueGreeConfig
+from app.models.scoring_profile import ScoringProfile
 
 # Thêm thư mục gốc của project vào sys.path để import được app
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -29,57 +30,72 @@ except ImportError as e:
     print(f"❌ Lỗi nạp Model/DB: {e}")
     print("Hãy đảm bảo bạn đã cài đặt các thư viện và cấu trúc folder đúng.")
 
-# Khởi tạo Context (Các biến dùng trực tiếp trong shell)
-db = SessionLocal()
-# nova = NovaAIClassifier()  # Nạp sẵn model DeBERTa
-qdrant_db = get_qdrant_db()
-product_repo = get_product_repository(db)
-vector_repo = get_product_vector_repository(qdrant_db)
-print("🧠 Đang nạp AI Models vào RAM (Vui lòng đợi vài giây)...")
-ai_model = get_ai_model_registry()
-ai_model.load_models()
-ai_model.use_model("clip_embedding")
-product_service = get_product_service(product_repo, vector_repo, ai_model)
-# Dictionary chứa các biến sẽ nạp vào shell
-# Bạn gõ tên key nào thì nó ra object đó (vd: gõ User sẽ ra class User)
-namespace = {
-    "db": db,
-    "session": db,  # Alias cho quen thuộc
-    "BlueGreeConfig": BlueGreeConfig,
-    # "Message": Message,
-    # "Training": NovaTrainingData,
-    # "NovaAIClassifier": nova,  # Load luôn bộ não AI vào RAM
-    # "qdrant_db": qdrant_db,
-    "product_service": product_service,
-    "debug": debug,
-    "settings": settings,
-    "os": os,
-    "engine": engine,
-}
 
-# Cấu hình giao diện Shell
-c = Config()
-c.InteractiveShellApp.exec_lines = [
-    'print("-" * 50)',
-    'print("🚀 NOVA AI CONSOLE (Rails-style) READY")',
-    'print("Usage: db.query(User).first()")',
-    'print("-" * 50)',
-]
-c.TerminalInteractiveShell.confirm_exit = False
-c.TerminalInteractiveShell.sql_color = True
+def create_console_namespace():
+    """Tạo các object sẵn để dùng trong console"""
+    db = SessionLocal()
+
+    qdrant_db = get_qdrant_db()
+    product_repo = get_product_repository(db)
+    vector_repo = get_product_vector_repository(qdrant_db)
+
+    print("🧠 Đang load AI models (có thể mất vài giây)...")
+    ai_registry = get_ai_model_registry()
+    ai_registry.load_models()
+    ai_registry.use_model("clip_embedding")
+
+    product_service = get_product_service(product_repo, vector_repo, ai_registry)
+
+    namespace = {
+        "db": db,
+        "session": db,
+        "engine": engine,
+        "settings": settings,
+        "qdrant_db": qdrant_db,
+        "product_repo": product_repo,
+        "vector_repo": vector_repo,
+        "product_service": product_service,
+        "ai_model": ai_registry,
+        "BlueGreeConfig": BlueGreeConfig,
+        "ScoringProfile": ScoringProfile,
+        "debug": debug,
+        "os": os,
+    }
+
+    return namespace, db
 
 
-# Đảm bảo đóng session khi thoát console (giống cleanup)
-def close_db():
-    db.close()
-    print("\n👋 Database session closed. Goodbye!")
+def main():
+    namespace, db = create_console_namespace()
 
-
-# Chạy IPython
-if __name__ == "__main__":
+    c = Config()
+    c.InteractiveShellApp.exec_lines = [
+        "%load_ext autoreload",  # Load extension
+        "%autoreload 2",  # Bật chế độ reload tất cả modules
+        'print("-" * 50)',
+        'print("🚀 NOVA AI CONSOLE READY")',
+        'print("-" * 50)',
+    ]
+    c.TerminalInteractiveShell.confirm_exit = False
+    c.TerminalInteractiveShell.sql_color = True
+    print("Đang khởi động IPython...")
     try:
         IPython.start_ipython(argv=[], user_ns=namespace, config=c)
+    except KeyboardInterrupt:
+        print("\n👋 Đã thoát bằng Ctrl+C")
     except Exception as e:
-        print(f"❌ Lỗi khi chạy console: {e}")
+        print(f"❌ Lỗi khi chạy IPython console: {type(e).__name__}: {e}")
+        import traceback
+
+        traceback.print_exc()
     finally:
-        close_db()
+        try:
+            db.close()
+            print("✅ Database session đã đóng.")
+        except Exception as close_e:
+            print(f"⚠️ Không đóng được DB session: {close_e}")
+            pass
+
+
+if __name__ == "__main__":
+    main()
