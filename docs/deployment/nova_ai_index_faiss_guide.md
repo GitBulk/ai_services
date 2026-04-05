@@ -1,4 +1,4 @@
-# Nova AI – FAISS Deployment Guide
+# Nova AI – INDEX + FAISS Deployment Guide
 
 ## 0. Deployment Pipeline (Executive Summary)
 ```
