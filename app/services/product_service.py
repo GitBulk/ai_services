@@ -79,3 +79,49 @@ class ProductService:
 
     def upsert_batch(self, points: list[models.PointStruct]):
         self.vector_repo.upsert_batch(points=points)
+
+    async def sample_product(self):
+        return await self.db_repo.get_by_id(469014)
+
+    # async def hybrid_search(self, query_text: str, limit: int = 10):
+    #     # Oversampling: Lấy dư dữ liệu để RRF có không gian hòa trộn
+    #     # Với limit=10, chúng ta sẽ lấy 30 thằng từ mỗi bên
+    #     fetch_limit = limit * 3
+    #     text_query_vector = self._encode_text_to_vector(query_text)
+
+    #     # 1. Chạy song song để tối ưu Mac M3
+    #     # tasks = [
+    #     #     # Gọi Qdrant (Semantic)
+    #     #     self.vector_repo.query_multi_modal(text_query_vector, None, top_k=fetch_limit),
+    #     #     # Gọi Postgres (Lexical/BM25) - Trả về list ID
+    #     #     self.db_repo.search_full_text(query_text, limit=fetch_limit),
+    #     # ]
+    #     vector_results = self.vector_repo.query_multi_modal(text_query_vector, None, top_k=fetch_limit)
+    #     keyword_ids = await self.db_repo.search_full_text(query_text, limit=fetch_limit)
+
+    #     # vector_results, keyword_ids = await asyncio.gather(task1, task2)
+    #     print(f"[INFO] Vector results: {vector_results}")
+    #     print(f"[INFO] Keyword IDs: {keyword_ids}")
+    #     # 2. Thuật toán RRF (Reciprocal Rank Fusion)
+    #     k = 60
+    #     rrf_scores = {}  # {product_id: total_score}
+
+    #     # Rank từ Qdrant
+    #     for rank, hit in enumerate(vector_results.get("results", []), start=1):
+    #         pid = hit["id"]
+    #         rrf_scores[pid] = rrf_scores.get(pid, 0) + (1.0 / (k + rank))
+
+    #     # Rank từ Postgres
+    #     for rank, pid in enumerate(keyword_ids, start=1):
+    #         rrf_scores[pid] = rrf_scores.get(pid, 0) + (1.0 / (k + rank))
+
+    #     # 3. Sắp xếp và lấy đúng số lượng 'limit' người dùng cần
+    #     sorted_results = sorted(rrf_scores.items(), key=lambda x: x[1], reverse=True)[:limit]
+
+    #     # 4. Trích xuất list ID cuối cùng để query thông tin chi tiết (nếu cần)
+    #     final_ids = [item[0] for item in sorted_results]
+
+    #     return final_ids
+
+    def _encode_text_to_vector(self, text: str):
+        return self.ai_model.encode_text(text).tolist() if text else None

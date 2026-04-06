@@ -5,6 +5,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Nova AI"
     VERSION: str = "1.0.0"
+    APP_ENV: str = "production"  # dev | staging | production
+
+    @property
+    def is_development(self) -> bool:
+        print("--- DEBUG SETTINGS ---")
+        return self.APP_ENV == "dev"
+
     # --- AI Engine Config ---
     # Tự động chọn thiết bị: ưu tiên MPS (Mac), sau đó đến CUDA (Nvidia), cuối cùng là CPU
     DEVICE: str = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
@@ -13,7 +20,6 @@ class Settings(BaseSettings):
     # --- Qdrant Config ---
     QDRANT_URL: str = "QDRANT_URL"
     QDRANT_API_KEY: str = "QDRANT_API_KEY"
-    QDRANT_ENVIRONMENT: str = "dev"  # dev | staging | production
     TEXT_WEIGHT: float = 0.5
     IMAGE_WEIGHT: float = 0.5
 
@@ -37,7 +43,7 @@ class Settings(BaseSettings):
 
     @property
     def database_url(self) -> str:
-        return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        return f"postgres://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

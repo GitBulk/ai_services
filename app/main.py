@@ -1,54 +1,60 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
-from app.core.signal_handler import setup_signal_handlers
-from app.routes import router as nova_router
-from app.core.settings import settings
-from app.core.model_registry import model_registry
-from app.core.service_registry import service_registry
+from tortoise.contrib.fastapi import RegisterTortoise
+
 # from app.services.vector_resource_manager import VectorResourceManager
-from app.services.vector_multi_resource_manager import VectorMultiResourceManager
+from app.core.model_registry import model_registry
+from app.core.settings import settings
+from app.db.qdrant_db import qdrant_db
+from app.db.tortoise_config import TORTOISE_CONFIG
+from app.routes import router as nova_router
 
+
+@asynccontextmanager
 async def lifespan(app: FastAPI):
-    print('[INFO] Starting Nova AI...')
-    # load model
+    print("[INFO] Starting Nova AI...")
+    # Load model AI nặng trịch vào RAM
     model_registry.load_models()
+    model_registry.use_model("clip_embedding")
+    print("[INFO] Nova AI ready 🚀")
+    # await Tortoise.init(config=TORTOISE_CONFIG)
+    # async with RegisterTortoise(
+    #     app=app,                    # important: pass the app
+    #     config=TORTOISE_CONFIG
+    # ):
+    # print("[INFO] DB connected")
+    # yield
 
-    resource_manager = VectorMultiResourceManager(settings)
-    resource_manager.initialize()
+    # yield
+    async with RegisterTortoise(
+        app=app,
+        config=TORTOISE_CONFIG,  # hoặc db_url + modules
+        generate_schemas=False,  # Chỉ bật True khi dev và muốn tự tạo bảng
+        add_exception_handlers=True,
+    ):
+        print("[INFO] DB connected")
+        yield  # ← Phải có yield ở đây
 
-    service_registry.initialize(model_registry, resource_manager)
+    # Cleanup khi tắt server
+    print("[INFO] Shutting down...")
+    # await Tortoise.close_connections()
+    qdrant_db.close()
+    print("[INFO] DB closed")
 
-    # setup signals to reload index
-    setup_signal_handlers(service_registry, model_registry)
 
-    # Gán vào app.state để route có thể truy cập
-    # app.state.service_registry = service_registry
-    vector_service = service_registry.get('text_vector')
-    vector_service.initialize()
-
-    print('[INFO] Nova AI ready 🚀')
-
-    yield
-
-    # (optional) cleanup
-    print('[INFO] Shutting down...')
-
-app = FastAPI(
-    title = settings.PROJECT_NAME,
-    description = 'Nova AI',
-    version = '1.0',
-    lifespan = lifespan
-)
+app = FastAPI(title=settings.PROJECT_NAME, description="Nova AI", version="1.0", lifespan=lifespan)
 
 # add middlewares
 # app.add_middleware(TracingMiddleware)
 app.include_router(nova_router, prefix="/api/v1", tags=["Nova Analysis"])
 
 
-@app.get('/')
+@app.get("/")
 async def root():
     return {
-        'message': 'Nova AI Service is running',
-        'device': settings.DEVICE,
-        'project': '#nova_ai',
-        'version': settings.VERSION
+        "message": "Nova AI Service is running",
+        "device": settings.DEVICE,
+        "project": "#nova_ai",
+        "version": settings.VERSION,
     }

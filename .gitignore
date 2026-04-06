@@ -72,3 +72,5 @@ data/products_current.parquet
 data/products_current.index
 data/products_for_ai*.jsonl
 data/faiss_products*.config.json
+/mdeberta_onnx_optimized_old/*
+/mdeberta_onnx_optimized/*

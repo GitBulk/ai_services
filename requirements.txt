@@ -1,9 +1,12 @@
 ai-services-migrate==0.1
+aiosqlite==0.22.1
 alembic==1.18.4
 annotated-doc==0.0.4
 annotated-types==0.7.0
 anyio==4.12.1
 asttokens==2.4.1
+asyncclick==8.3.0.7
+asyncpg==0.31.0
 build==1.4.2
 CacheControl==0.14.4
 certifi==2026.2.25
@@ -15,6 +18,7 @@ clickhouse-connect==0.15.1
 crashtest==0.4.1
 decorator==5.2.1
 devtools==0.12.2
+dictdiffer==0.9.0
 distlib==0.4.0
 dulwich==1.1.0
 executing==2.2.1
@@ -38,6 +42,7 @@ idna==3.11
 installer==0.7.0
 ipython==9.11.0
 ipython_pygments_lexers==1.1.1
+iso8601==2.1.0
 jaraco.classes==3.4.0
 jaraco.context==6.1.2
 jaraco.functools==4.4.0
@@ -83,6 +88,7 @@ pydantic==2.12.5
 pydantic-settings==2.13.1
 pydantic_core==2.41.5
 Pygments==2.19.2
+pypika-tortoise==0.6.5
 pyproject_hooks==1.2.0
 python-dateutil==2.9.0.post0
 python-discovery==1.2.1
@@ -113,6 +119,7 @@ threadpoolctl==3.6.0
 tokenizers==0.22.2
 tomlkit==0.14.0
 torch==2.10.0
+tortoise-orm==1.1.7
 tqdm==4.67.3
 traitlets==5.14.3
 transformers==4.57.6
