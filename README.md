@@ -92,13 +92,22 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 │       └── processor.py      # Xử lý AI thực thụ (Clean text, move to GPU)
 |       └── nsfw_service.py   # ViT-based NSFW detector
 |       └── vector_service.py # Image embedding engine
-├── data/                     # Nơi chứa các Model AI (.pth, .bin), service chỉ đọc data/current.index, data/current.parquet
-    ├── faiss_20260320_0100.index
-    ├── metadata_20260320_0100.parquet
-    ├── faiss_20260321_0200.index
-    ├── metadata_20260321_0200.parquet
-    ├── current.index     -> symlink
-    └── current.parquet   -> symlink
+├── data/                     # Nơi chứa các Model AI (.pth, .bin), service chỉ đọc data/current.index, data/current.parquet - If it works, don't touch it
+|   ├── faiss_20260320_0100.index
+|   ├── metadata_20260320_0100.parquet
+|   ├── faiss_20260321_0200.index
+|   ├── metadata_20260321_0200.parquet
+|   ├── current.index     -> symlink
+|   └── current.parquet   -> symlink
+├── ai_models/                # EFS MOUNT POINT (Dữ liệu nặng, chia theo Model & Version)
+|   ├── mdeberta/             # Folder cho model mDeBERTa
+|   │   ├── v_20260604_0910/  # Chứa config.json, model.safetensors, v.v.
+|   │   ├── v_20260610_1500/
+|   │   └── current ----------> (Symlink trỏ đến folder version đang chạy)
+|   │
+|   └── modelXYZ/             # Folder cho các model AI khác trong tương lai
+|        ├── v_20260304_1910/
+|        └── current ----------> (Symlink trỏ đến folder version đang chạy)
 ├── env_nova/                 # Môi trường ảo (Virtual Environment)
 ├── .env                      # Lưu biến môi trường (PROJECT_NAME, VERSION)
 ├── .gitignore                # Chặn đẩy env_nova và .env lên Git

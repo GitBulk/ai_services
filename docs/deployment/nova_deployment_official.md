@@ -100,19 +100,73 @@ Chúng ta chọn **Kịch bản C (EFS)** vì những lý do chiến lược sau
 
 *   **/home/ubuntu/nova-ai/ (Local SSD):** Chứa Source code, Virtual Env và các file dữ liệu cũ (data/ chứa FAISS index).
     
-*   **/home/ubuntu/ai\_models/ (Mount từ EFS):** Chứa các phiên bản Model AI khổng lồ.
+*   **/home/ubuntu/ai_models/ (Mount từ EFS):** Chứa các phiên bản Model AI khổng lồ.
     
+
+DevOps sẽ thực hiện mount ổ EFS vào thư mục `/home/ubuntu/nova_ai/ai_models`
+
+Lệnh Mount thủ công (để test):
+
+```bash
+sudo mount -t efs -o tls fs-0123456789abcdef:/ /home/ubuntu/nova_ai/ai_models
+(Trong đó fs-0123456789abcdef là File System ID của EFS trên AWS).
+```
+
+Cấu hình tự động Mount khi khởi động máy (Sửa file /etc/fstab):
+DevOps cần thêm dòng này để đảm bảo máy EC2 khởi động lại thì ổ EFS vẫn còn đó:
+
+```bash
+fs-0123456789abcdef:/ /home/ubuntu/nova_ai/ai_models efs _netdev,tls 0 0
+```
 
 ### 🔄 Quy trình Deploy Multi-version (Atomic Switch)
 
-Chúng ta không sửa file .env. Việc chuyển đổi phiên bản được thực hiện qua **Symlink** trên EFS:
+Chúng ta không sửa file .env. Việc chuyển đổi phiên bản được thực hiện qua **Symlink** trên EFS.
 
-1.  **Sync:** Jenkins đẩy Model mới vào folder timestamp trên EFS: ai\_models/versions/20260406\_0900/.
-    
-2.  **Switch:** Cập nhật Symlink ai\_models/current trỏ về folder mới.
-    
-3.  **Reload:** Chạy pm2 reload để 9 Workers nạp model mới tuần tự (Zero-downtime).
-    
+1\. S3 (Kho lưu trữ gốc): Nơi chứa tất cả các version model từ trước đến nay (Storage rẻ nhất).
+
+2\. Jenkins (Người điều phối): Jenkins chạy lệnh sync. Nó kéo data từ S3 và đẩy vào folder version mới trên EFS (thông qua đường truyền mạng nội bộ AWS).
+
+3\. EFS (Bộ nhớ dùng chung): Sau khi sync xong, file đã nằm an toàn trên EFS.
+
+4\. Vì cả 3 máy EC2 Nova AI cùng mount vào một ổ EFS, nên ngay khi Jenkins sync xong, cả 3 máy đều "nhìn" thấy folder version mới đó cùng một lúc.
+
+
+Khi Jenkins đẩy một version mới của mdeberta, các bước sẽ như sau:
+
+Bước 1: Tạo folder version mới trên EFS (thông qua điểm mount trên EC2)
+```bash
+mkdir -p /home/ubuntu/nova_ai/ai_models/mdeberta/v_20260604_0910
+```
+
+Bước 2: Copy model mới vào (Jenkins sync từ S3 sang)
+```bash
+aws s3 sync s3://my-ai-bucket/mdeberta/new_version/ /home/ubuntu/nova_ai/ai_models/mdeberta/v_20260604_0910/
+```
+
+Bước 3: Đảo Symlink current trên EFS (Cực kỳ quan trọng)
+```bash
+# Di chuyển vào folder cha của model đó
+cd /home/ubuntu/nova_ai/ai_models/mdeberta/
+
+# Trỏ link 'current' sang folder mới một cách an toàn (Atomic Switch)
+ln -sfn v_20260604_0910 current
+```
+
+Bước 4: pm2 reload all
+
+**Lưu ý về quyền truy cập (Permissions)**
+
+Vì chạy App bằng User ubuntu (hoặc user chạy PM2), DevOps cần đảm bảo quyền sở hữu folder sau khi mount:
+```bash
+sudo chown -R ubuntu:ubuntu /home/ubuntu/nova_ai/ai_models
+```
+
+file .env
+```
+AI_MODEL_PATH="./ai_models/mdeberta/current"
+```
+
 
 3\. KẾT NỐI MẠNG: PRIVATE LINK VS PUBLIC LINK
 ---------------------------------------------
