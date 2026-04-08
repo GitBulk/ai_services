@@ -9,7 +9,7 @@ from app.core.settings import settings
 class ProductVectorRepository:
     def __init__(self, qdrant_db: QdrantClient):
         self.qdrant_db = qdrant_db
-        self.current_alias_name = f"{settings.QDRANT_ENVIRONMENT}_nova_products_alias"
+        self.current_alias_name = f"{settings.APP_ENV}_nova_products_alias"
 
     def query_similar_points(
         self,
