@@ -1,16 +1,13 @@
 import time
 from typing import Any
 
-from qdrant_client import QdrantClient, models
+from qdrant_client import models
 
-from app.core.settings import settings
+from app.core.config import settings
+from app.repositories.product_vector_base import ProductVectorBase
 
 
-class ProductVectorRepository:
-    def __init__(self, qdrant_db: QdrantClient):
-        self.qdrant_db = qdrant_db
-        self.current_alias_name = f"{settings.APP_ENV}_nova_products_alias"
-
+class ProductVectorRepository(ProductVectorBase):
     def query_similar_points(
         self,
         vector_name: str,
@@ -41,7 +38,7 @@ class ProductVectorRepository:
         )
         return self._format_results(results.points)
 
-    def query_hybrid(
+    def query_multi_modal(
         self,
         text_query_vector: list[float],
         image_query_vector: list[float],
@@ -164,41 +161,6 @@ class ProductVectorRepository:
                 print(f"🧹 Đang xóa collection cũ: {old_collection}...")
                 self.qdrant_db.delete_collection(collection_name=old_collection)
 
-    def _build_filter(
-        self, category: str | None, min_price: float | None, max_price: float | None
-    ) -> models.Filter | None:
-        must_conditions = []
-        if category:
-            must_conditions.append(
-                models.FieldCondition(key="master_category", match=models.MatchValue(value=category))
-            )
-
-        if min_price is not None or max_price is not None:
-            range_params = {key: value for key, value in [("gte", min_price), ("lte", max_price)] if value is not None}
-            must_conditions.append(models.FieldCondition(key="price", range=models.Range(**range_params)))
-
-        return models.Filter(must=must_conditions) if must_conditions else None
-
-    def _build_prefetches(
-        self,
-        text_query_vector: list[float] | None,
-        image_query_vector: list[float] | None,
-        query_filter: models.Filter | None,
-        top_k: int,
-    ) -> list[models.Prefetch]:
-        prefetches = []
-        if text_query_vector:
-            prefetches.append(
-                models.Prefetch(query=text_query_vector, using="text_vector", limit=top_k * 3, filter=query_filter)
-            )
-
-        if image_query_vector:
-            prefetches.append(
-                models.Prefetch(query=image_query_vector, using="image_vector", limit=top_k * 3, filter=query_filter)
-            )
-
-        return prefetches
-
     def _excute_single_query(self, prefetch: models.Prefetch, top_k: int) -> models.QueryResponse:
         results = self.qdrant_db.query_points(
             collection_name=self.current_alias_name,
@@ -220,12 +182,3 @@ class ProductVectorRepository:
             limit=top_k,
         )
         return results
-
-    def _format_results(self, points, start_time: float | None = None):
-        metadata = {"total_hits": len(points)}
-        if start_time is not None:
-            elapsed_ms = (time.perf_counter() - start_time) * 1000
-            metadata["elapsed_time_ms"] = round(elapsed_ms, 2)
-
-        data = [{"id": point.id, "score": round(float(point.score), 4), **(point.payload or {})} for point in points]
-        return {"results": data, "metadata": metadata}

@@ -38,8 +38,9 @@ class Settings(BaseSettings):
     DB_NAME: str = "nova_db_name"
 
     # Redis
-    REDIS_HOST: str = "REDIS_HOST"
-    REDIS_PORT: str = "REDIS_PORT"
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    REDIS_DB: int = 0
 
     @property
     def database_url(self) -> str:

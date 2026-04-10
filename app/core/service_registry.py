@@ -1,4 +1,4 @@
-from app.core.settings import settings
+from app.core.config import settings
 from app.services.faiss_vector_service import FaissVectorService
 from app.services.in_memory_vector_service import InMemoryVectorService
 from app.services.ranking.cross_encoder_reranker import CrossEncoderReranker

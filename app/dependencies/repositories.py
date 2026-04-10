@@ -1,12 +1,13 @@
 from typing import Annotated
 
 from fastapi import Depends
-from qdrant_client import QdrantClient
+from qdrant_client import AsyncQdrantClient, QdrantClient
 
 # from sqlalchemy.orm import Session
-from app.db.qdrant_db import get_qdrant_db
+from app.db.qdrant_db import get_async_qdrant_db, get_qdrant_db
 
 # from app.db.session import get_db
+from app.repositories.async_product_vector_repository import AsyncProductVectorRepository
 from app.repositories.product_repository import ProductRepository
 from app.repositories.product_vector_repository import ProductVectorRepository
 
@@ -23,5 +24,10 @@ def get_product_repository() -> ProductRepository:
 def get_product_vector_repository(
     qdrant_db: Annotated[QdrantClient, Depends(get_qdrant_db)],
 ) -> ProductVectorRepository:
-    # Inject ProductVectorRepository, work with vector database (Qdrant)
     return ProductVectorRepository(qdrant_db=qdrant_db)
+
+
+def get_async_product_vector_repository(
+    qdrant_db: Annotated[AsyncQdrantClient, Depends(get_async_qdrant_db)],
+) -> AsyncProductVectorRepository:
+    return AsyncProductVectorRepository(qdrant_db=qdrant_db)

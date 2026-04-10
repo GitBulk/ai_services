@@ -135,6 +135,7 @@ class {class_name}(QdrantMigration):
 
         return
 
+    qdrant_db.close()
     typer.echo("Sử dụng --help để xem hướng dẫn. Ví dụ: qdrant migrate -m 'init'")
 
 

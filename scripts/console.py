@@ -4,7 +4,7 @@ import sys
 import IPython
 from traitlets.config import Config
 
-from app.core.settings import settings
+from app.core.config import settings
 from app.db.qdrant_db import get_qdrant_db
 from app.db.session import SessionLocal, engine
 from app.dependencies.ai_model import get_ai_model_registry
