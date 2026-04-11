@@ -1,4 +1,7 @@
+import os
+
 import torch
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -13,8 +16,21 @@ class Settings(BaseSettings):
         return self.APP_ENV == "dev"
 
     # --- AI Engine Config ---
-    # Tự động chọn thiết bị: ưu tiên MPS (Mac), sau đó đến CUDA (Nvidia), cuối cùng là CPU
-    DEVICE: str = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
+    # Auto-detected: mps > cuda > cpu. Can be overridden via DEVICE= in .env:
+    # Reads from .env if DEVICE=cpu (or any value) is set there
+    # Falls back to auto-detection (mps → cuda → cpu) if not set
+    DEVICE: str = ""
+
+    @model_validator(mode="after")
+    def set_device(self) -> "Settings":
+        if not self.DEVICE:
+            if torch.backends.mps.is_available():
+                self.DEVICE = "mps"
+            elif torch.cuda.is_available():
+                self.DEVICE = "cuda"
+            else:
+                self.DEVICE = "cpu"
+        return self
 
     VECTOR_BACKEND: str = "qdrant"  # 'memory' | faiss | qdrant
     # --- Qdrant Config ---
@@ -48,5 +64,19 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
+    # --- OpenAI ---
+    OPENAI_API_KEY: str = ""
+    OPENAI_MODEL: str = "gpt-4o-mini"
+
+    AI_MODEL_PATH: str = "./models/mdeberta_raw"
+    # 1: hoạt đông offline, nếu chưa tải model về từ trước thì văng lỗi
+    # 0: ưu tiên dùng bản model đã tải về trước, nếu chưa có sẽ kết nối hugging face để tải.
+    TRANSFORMERS_OFFLINE: str = "0"
+    HF_DATASETS_OFFLINE: str = "0"
+
 
 settings = Settings()
+# Ép biến môi trường hệ thống ngay sau khi load settings ---
+# Điều này đảm bảo thư viện transformers đọc đúng cấu hình Offline
+os.environ["TRANSFORMERS_OFFLINE"] = settings.TRANSFORMERS_OFFLINE
+os.environ["HF_DATASETS_OFFLINE"] = settings.HF_DATASETS_OFFLINE
