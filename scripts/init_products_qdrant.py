@@ -4,8 +4,8 @@ import time
 
 from qdrant_client import models
 
+from app.core.config import settings
 from app.core.model_registry import model_registry
-from app.core.settings import settings
 from app.db.qdrant_db import get_qdrant_db
 from app.dependencies.repositories import get_product_vector_repository
 
@@ -19,7 +19,7 @@ def run_import():
     qdrant_db = get_qdrant_db()
     utc_now = datetime.now(datetime.timezone.utc)
     # version có dạng 20260328_141516
-    new_collection_name = f"{settings.QDRANT_ENVIRONMENT}_nova_products_{utc_now.strftime('%Y%m%d_%H%M%S')}"
+    new_collection_name = f"{settings.APP_ENV}_nova_products_{utc_now.strftime('%Y%m%d_%H%M%S')}"
     vector_repo = get_product_vector_repository(qdrant_db)
     alias_name = vector_repo.current_alias_name
     model_registry.load_models()
@@ -63,6 +63,7 @@ def run_import():
         vector_repo.upsert_batch(batch_points)
         total_imported += len(batch_points)
 
+    qdrant_db.close()
     print(f"ZERO-DOWNTIME HOÀN TẤT! Đã đẩy {total_imported} vectors trong {time.time() - start_time:.2f} giây!")
 
 

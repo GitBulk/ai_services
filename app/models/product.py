@@ -1,8 +1,10 @@
-from tortoise import fields, models
+from tortoise import fields
 from tortoise.contrib.postgres.indexes import GinIndex
 
+from app.models.base_model import BaseModel
 
-class Product(models.Model):
+
+class Product(BaseModel):
     id = fields.IntField(pk=True)
     image_path = fields.CharField(max_length=255, null=True)
     gender = fields.CharField(max_length=20, null=True)

@@ -1,11 +1,10 @@
-# app/models/recommendation_config.py
 from sqlalchemy import Column, DateTime, Integer, String, func
 
 from app.db.active_record_mixin import ActiveRecordMixin
-from app.db.session import Base
+from app.db.session import BaseModel
 
 
-class BlueGreeConfig(Base, ActiveRecordMixin):
+class BlueGreeConfig(BaseModel, ActiveRecordMixin):
     __tablename__ = "blue_green_configs"
 
     id = Column(Integer, primary_key=True)

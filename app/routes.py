@@ -40,13 +40,11 @@ async def sample_product(service: InjectedProductService):
 
 
 @router.post("/search_products")
-def search(request: ProductSearchRequest):
+async def search(request: ProductSearchRequest, service: InjectedProductService):
     if not request.query_text and not request.image_url:
         raise HTTPException(status_code=400, detail="Cần cung cấp query_text hoặc image_url")
-
+    print(f"🚀 Searching: {request.query_text}")
     top_k = min(request.top_k or 5, 20)
-    query_vector = model_registry.encode_multimodal(text=request.query_text, image_url=request.image_url)
-    vector_service = service_registry.get("product_service")
-    candidates = vector_service.search(query_vector=query_vector, top_k=top_k)
 
+    candidates = await service.hybrid_search(request.query_text, top_k)
     return {"result": candidates}

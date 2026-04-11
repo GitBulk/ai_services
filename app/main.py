@@ -2,11 +2,13 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from tortoise.contrib.fastapi import RegisterTortoise
+from app.core.ai_models.models_config import MODEL_DEFINITIONS
+from app.core.config import settings
 
 # from app.services.vector_resource_manager import VectorResourceManager
 from app.core.model_registry import model_registry
-from app.core.settings import settings
-from app.db.qdrant_db import qdrant_db
+from app.core.redis import close_redis_async, get_async_redis_client
+from app.db.qdrant_db import close_qdrant_client_async, get_async_qdrant_db
 from app.db.tortoise_config import TORTOISE_CONFIG
 from app.routes import router as nova_router
 
@@ -17,6 +19,8 @@ async def lifespan(app: FastAPI):
     # Load model AI nặng trịch vào RAM
     model_registry.load_models()
     model_registry.use_model("clip_embedding")
+    get_async_qdrant_db()
+    get_async_redis_client()
     print("[INFO] Nova AI ready 🚀")
     # await Tortoise.init(config=TORTOISE_CONFIG)
     # async with RegisterTortoise(
@@ -39,7 +43,8 @@ async def lifespan(app: FastAPI):
     # Cleanup khi tắt server
     print("[INFO] Shutting down...")
     # await Tortoise.close_connections()
-    qdrant_db.close()
+    await close_qdrant_client_async()
+    await close_redis_async()
     print("[INFO] DB closed")
 
 

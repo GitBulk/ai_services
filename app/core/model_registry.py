@@ -1,4 +1,4 @@
-from app.core.settings import settings
+from app.core.config import settings
 from app.models.clip_embedding_model import ClipEmbeddingModel
 from app.models.text_embedding_model import TextEmbeddingModel
 

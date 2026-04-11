@@ -14,6 +14,7 @@ def run_rollback(version: str):
     alias_name = vector_repo.collection_name
     new_collection_name = f"{alias_name}_{version}"
     vector_repo.switch_alias(new_collection_name)
+    qdrant_db.close()
     print(f"✅ Đã rollback về collection '{new_collection_name}' trên Qdrant Cloud.")
 
 
