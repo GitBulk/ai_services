@@ -25,6 +25,7 @@ PRODUCT_META_FILE = metadata_products_$(INDEX_VERSION).parquet
 
 .PHONY: run stop restart reload \
         install freeze test clean \
+        db_migrate db_makemigrations db_history db_sqlmigrate \
         build_index deploy link current rollback rollback_last clean_index
 
 define CHECK_PID
@@ -83,6 +84,26 @@ else
 	@echo "[SUCCESS] Reload signal sent 🚀"
 endif
 
+
+# ================================
+# DATABASE MIGRATIONS
+# ================================
+TORTOISE_CONFIG = app.db.tortoise_config.TORTOISE_CONFIG
+
+db_migrate:
+	PYTHONPATH=. tortoise -c $(TORTOISE_CONFIG) migrate
+
+db_makemigrations:
+	PYTHONPATH=. tortoise -c $(TORTOISE_CONFIG) makemigrations
+
+db_history:
+	PYTHONPATH=. tortoise -c $(TORTOISE_CONFIG) history
+
+db_sqlmigrate:
+	@if [ -z "$(NAME)" ]; then \
+		echo "Usage: make db_sqlmigrate NAME=0002_..."; exit 1; \
+	fi
+	PYTHONPATH=. tortoise -c $(TORTOISE_CONFIG) sqlmigrate models $(NAME)
 
 # ================================
 # PACKAGE / TEST

@@ -1,6 +1,6 @@
 # app/db/tortoise_config.py
 
-from app.core.settings import settings
+from app.core.config import settings
 
 database_url = settings.database_url
 print(f"[INFO] DB URL: {database_url}")
@@ -12,9 +12,9 @@ TORTOISE_CONFIG = {
     },
     "apps": {
         "models": {
-            # Quét toàn bộ folder models
             "models": ["app.models"],
             "default_connection": "default",
+            "migrations": "app.migrations",
         }
     },
 }
