@@ -42,6 +42,12 @@ class ModelManager:
             self._loaded_instances[name] = instance
             return instance
 
+    async def warm_up(self):
+        """Eagerly load all registered models into RAM concurrently."""
+        names = list(self._blueprints.keys())
+        await asyncio.gather(*[self.get_model(name) for name in names])
+        print(f"[INFO] ModelManager: Warmed up {len(names)} models: {names}")
+
     async def clear_all(self):
         """Xóa tất cả instance đã load vào RAM"""
         async with self._lock:

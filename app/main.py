@@ -2,11 +2,10 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from tortoise.contrib.fastapi import RegisterTortoise
+
+from app.core.ai_models.model_manager import model_manager
 from app.core.ai_models.models_config import MODEL_DEFINITIONS
 from app.core.config import settings
-
-# from app.services.vector_resource_manager import VectorResourceManager
-from app.core.model_registry import model_registry
 from app.core.redis import close_redis_async, get_async_redis_client
 from app.db.qdrant_db import close_qdrant_client_async, get_async_qdrant_db
 from app.db.tortoise_config import TORTOISE_CONFIG
@@ -16,36 +15,24 @@ from app.routes import router as nova_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("[INFO] Starting Nova AI...")
-    # Load model AI nặng trịch vào RAM
-    model_registry.load_models()
-    model_registry.use_model("clip_embedding")
+    model_manager.load_definitions(MODEL_DEFINITIONS)
+    await model_manager.warm_up()
     get_async_qdrant_db()
     get_async_redis_client()
-    print("[INFO] Nova AI ready 🚀")
-    # await Tortoise.init(config=TORTOISE_CONFIG)
-    # async with RegisterTortoise(
-    #     app=app,                    # important: pass the app
-    #     config=TORTOISE_CONFIG
-    # ):
-    # print("[INFO] DB connected")
-    # yield
-
-    # yield
     async with RegisterTortoise(
         app=app,
-        config=TORTOISE_CONFIG,  # hoặc db_url + modules
-        generate_schemas=False,  # Chỉ bật True khi dev và muốn tự tạo bảng
+        config=TORTOISE_CONFIG,
+        generate_schemas=settings.GENERATE_SCHEMAS,
         add_exception_handlers=True,
     ):
-        print("[INFO] DB connected")
-        yield  # ← Phải có yield ở đây
+        print("[INFO] Nova AI ready")
+        yield
 
-    # Cleanup khi tắt server
     print("[INFO] Shutting down...")
-    # await Tortoise.close_connections()
     await close_qdrant_client_async()
     await close_redis_async()
-    print("[INFO] DB closed")
+    await model_manager.clear_all()
+    print("[INFO] Shutdown complete")
 
 
 app = FastAPI(title=settings.PROJECT_NAME, description="Nova AI", version="1.0", lifespan=lifespan)
