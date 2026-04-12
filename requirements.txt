@@ -19,6 +19,7 @@ decorator==5.2.1
 devtools==0.12.2
 dictdiffer==0.9.0
 distlib==0.4.0
+distro==1.9.0
 dulwich==1.1.0
 executing==2.2.1
 faiss-cpu==1.13.2
@@ -38,6 +39,7 @@ httpx==0.28.1
 huggingface_hub==0.36.2
 hyperframe==6.1.0
 idna==3.11
+ImageHash==4.3.2
 installer==0.7.0
 ipython==9.11.0
 ipython_pygments_lexers==1.1.1
@@ -47,6 +49,7 @@ jaraco.context==6.1.2
 jaraco.functools==4.4.0
 jedi==0.19.2
 Jinja2==3.1.6
+jiter==0.14.0
 joblib==1.5.3
 keyring==25.7.0
 lz4==4.4.5
@@ -60,9 +63,11 @@ more-itertools==10.8.0
 mpmath==1.3.0
 msgpack==1.1.2
 networkx==3.6.1
+nltk==3.9.4
 numpy==2.4.3
 onnx==1.21.0
 onnxruntime==1.24.4
+openai==2.31.0
 optimum==2.1.0
 optimum-onnx==0.1.0
 packaging==26.0
@@ -94,6 +99,7 @@ python-discovery==1.2.1
 python-dotenv==1.2.2
 python-multipart==0.0.22
 pytz==2026.1.post1
+PyWavelets==1.9.0
 PyYAML==6.0.3
 qdrant-client==1.17.1
 RapidFuzz==3.14.3
@@ -110,6 +116,7 @@ sentence-transformers==5.3.0
 setuptools==82.0.1
 shellingham==1.5.4
 six==1.17.0
+sniffio==1.3.1
 SQLAlchemy==2.0.48
 stack-data==0.6.3
 starlette==0.52.1

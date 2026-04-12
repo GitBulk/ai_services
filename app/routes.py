@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 # from app.services.processor import processor
@@ -48,3 +49,15 @@ async def search(request: ProductSearchRequest, service: InjectedProductService)
 
     candidates = await service.hybrid_search(request.query_text, top_k)
     return {"result": candidates}
+
+
+@router.post("/search_products_stream")
+async def search_products_stream(request: ProductSearchRequest, service: InjectedProductService):
+    if not request.query_text:
+        raise HTTPException(status_code=400, detail="Cần cung cấp query_text")
+    top_k = min(request.top_k or 5, 20)
+
+    return StreamingResponse(
+        service.rag_search_stream(request.query_text, limit=top_k),
+        media_type="application/x-ndjson",
+    )

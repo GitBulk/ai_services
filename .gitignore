@@ -74,3 +74,7 @@ data/products_for_ai*.jsonl
 data/faiss_products*.config.json
 /mdeberta_onnx_optimized_old/*
 /mdeberta_onnx_optimized/*
+/models/*
+
+# --- Claude Code ---
+CLAUDE.local.md

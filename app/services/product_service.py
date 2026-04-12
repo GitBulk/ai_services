@@ -1,4 +1,5 @@
 import asyncio
+import json
 from typing import Any
 
 from qdrant_client import models
@@ -9,10 +10,11 @@ from app.repositories.product_repository import ProductRepository
 
 
 class ProductService:
-    def __init__(self, db_repo: ProductRepository, vector_repo: AsyncProductVectorRepository, ai_model):
+    def __init__(self, db_repo: ProductRepository, vector_repo: AsyncProductVectorRepository, ai_model, llm_service):
         self.db_repo = db_repo
         self.vector_repo = vector_repo
         self.ai_model = ai_model
+        self.llm_service = llm_service
         # vì ưu tiên search theo text hơn, nên mặc định gán trọng số text cao hơn image,
         # nhưng vẫn có thể điều chỉnh qua config nếu muốn
         self.text_weight = settings.TEXT_WEIGHT or 0.7
@@ -122,5 +124,88 @@ class ProductService:
         print(f"[INFO] Final IDs: {final_ids}")
         return final_ids
 
+    async def rag_search(self, query_text: str, limit: int = 5):
+        ctx = await self._build_rag_context(query_text, limit)
+        if ctx is None:
+            return {}
+
+        products, system_prompt, user_prompt = ctx
+        explanation = await self.llm_service.chat(
+            system_message=system_prompt, user_message=user_prompt, temperature=0.3
+        )
+        return {"answer": explanation, "products": products}
+
+    async def rag_search_stream(self, query_text: str, limit: int = 5):
+        ctx = await self._build_rag_context(query_text, limit)
+        if ctx is None:
+            return
+
+        products, system_prompt, user_prompt = ctx
+
+        # 5. Yield full product list first so the client gets data before LLM starts
+        # The products are Tortoise ORM objects with a DecimalField for price — not JSON-serializable directly.
+        product_list = [
+            {
+                "id": p.id,
+                "product_display_name": p.product_display_name,
+                "price": float(p.price) if p.price is not None else None,
+                "brand": p.brand,
+                "image_path": p.image_path,
+                "master_category": p.master_category,
+                "sub_category": p.sub_category,
+                "base_colour": p.base_colour,
+            }
+            for p in products
+        ]
+        yield json.dumps({"type": "products", "products": product_list}) + "\n"
+
+        # 6. Stream LLM response
+        async for chunk in self.llm_service.chat_stream(
+            system_message=system_prompt, user_message=user_prompt, temperature=0.3
+        ):
+            yield json.dumps({"type": "chunk", "content": chunk}) + "\n"
+
     def _encode_text_to_vector(self, text: str):
         return self.ai_model.encode_text(text).tolist() if text else None
+
+    async def _build_rag_context(self, query_text: str, limit: int):
+        """Shared retrieval + prompt-building for rag_search and rag_search_stream.
+
+        Returns (products, system_prompt, user_prompt) or None if no results.
+        """
+        final_ids = await self.hybrid_search(query_text, limit=limit)
+        if not final_ids:
+            return None
+
+        products = await self.db_repo.get_products_with_order(final_ids)
+
+        context_items = []
+        for idx, p in enumerate(products, 1):
+            context_items.append(
+                f"Product #{idx} (ID: {p.id}):\n"
+                f"- Name: {p.product_display_name}\n"
+                f"- Price: {p.price}\n"
+                f"- Description: {p.text_for_ai}\n"
+                f"- Specs: {p.get('specs', 'N/A')}"
+            )
+        context_str = "\n\n".join(context_items)
+
+        system_prompt = (
+            "You are an expert product consultant for NOVA AI. "
+            "Analyze the provided product context and explain their relevance to the user's query. "
+            "Must strictly adhere to the provided data. Do not hallucinate."
+        )
+
+        user_prompt = f"""
+    User Query: "{query_text}"
+
+    Context (Ranked by relevance):
+    {context_str}
+
+    Instructions:
+    1. Briefly summarize why these products match the user's need.
+    2. Recommend the best option and provide a concise justification.
+    3. If no product strictly matches, clearly state so.
+    """
+
+        return products, system_prompt, user_prompt
