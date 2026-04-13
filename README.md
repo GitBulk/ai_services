@@ -115,7 +115,7 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 **Database Migration:**
-
+`Không dùng alembic, chuyển qua dùng built-in migration của tortoise-orm`
 ***1. Relation db (Postgres 9.5)***
 ```bash
 pip install alembic

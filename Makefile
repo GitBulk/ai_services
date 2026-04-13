@@ -94,7 +94,10 @@ db_migrate:
 	PYTHONPATH=. tortoise -c $(TORTOISE_CONFIG) migrate
 
 db_makemigrations:
-	PYTHONPATH=. tortoise -c $(TORTOISE_CONFIG) makemigrations
+	@if [ -z "$(NAME)" ]; then \
+		echo "Usage: make db_makemigrations NAME=create_users"; exit 1; \
+	fi
+	PYTHONPATH=. tortoise -c $(TORTOISE_CONFIG) makemigrations -n $(NAME)
 
 db_history:
 	PYTHONPATH=. tortoise -c $(TORTOISE_CONFIG) history

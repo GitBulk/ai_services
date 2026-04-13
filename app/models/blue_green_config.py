@@ -1,13 +1,13 @@
-from sqlalchemy import Column, DateTime, Integer, String, func
+from tortoise import fields
 
-from app.db.active_record_mixin import ActiveRecordMixin
-from app.db.session import BaseModel
+from app.models.base_model import BaseModel
 
 
-class BlueGreeConfig(BaseModel, ActiveRecordMixin):
-    __tablename__ = "blue_green_configs"
+class BlueGreenConfig(BaseModel):
+    id = fields.IntField(pk=True)
+    key = fields.CharField(max_length=255, unique=True)
+    value = fields.CharField(max_length=255)
+    last_computed_at = fields.DatetimeField(auto_now=True)
 
-    id = Column(Integer, primary_key=True)
-    key = Column(String, unique=True, nullable=False)
-    value = Column(String, nullable=False)
-    last_computed_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    class Meta:
+        table = "blue_green_configs"
