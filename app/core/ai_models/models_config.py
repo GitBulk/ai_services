@@ -6,7 +6,7 @@ MODEL_DEFINITIONS = {
     "vi-text-fast": {
         "provider_cls": TextSpecialist,
         "config": {
-            "model_id": "BAAI/bge-m3",
+            "model_id": "all-MiniLM-L6-v2",
             "device": settings.DEVICE,
         },
     },

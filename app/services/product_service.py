@@ -4,16 +4,23 @@ from typing import Any
 
 from qdrant_client import models
 
+from app.core.ai_models.model_manager import ModelManager
 from app.core.config import settings
 from app.repositories.async_product_vector_repository import AsyncProductVectorRepository
 from app.repositories.product_repository import ProductRepository
 
 
 class ProductService:
-    def __init__(self, db_repo: ProductRepository, vector_repo: AsyncProductVectorRepository, ai_model, llm_service):
+    def __init__(
+        self,
+        db_repo: ProductRepository,
+        vector_repo: AsyncProductVectorRepository,
+        model_manager: ModelManager,
+        llm_service,
+    ):
         self.db_repo = db_repo
         self.vector_repo = vector_repo
-        self.ai_model = ai_model
+        self.model_manager = model_manager
         self.llm_service = llm_service
         # vì ưu tiên search theo text hơn, nên mặc định gán trọng số text cao hơn image,
         # nhưng vẫn có thể điều chỉnh qua config nếu muốn
@@ -22,12 +29,8 @@ class ProductService:
         print(f"[INFO] Search using weights: Text: {self.text_weight}, Image: {self.image_weight}")
 
     async def search_products(self, query_text, image_url, top_k: int) -> list[dict]:
-        # sinh vector truy vấn
-        # (Tương lai, ghép hàm rewrite_query/translate vào đây trước khi encode)
-        # query_vector = self.ai_model.encode_multimodal(text=query_text, image_url=image_url)
-
-        text_query_vector = self.ai_model.encode_text(query_text) if query_text else None
-        image_query_vector = self.ai_model.encode_image(image_url) if image_url else None
+        text_query_vector = await self._encode_text(query_text) if query_text else None
+        image_query_vector = await self._encode_image(image_url) if image_url else None
 
         async def fetch_text_results():
             if not text_query_vector:
@@ -71,9 +74,9 @@ class ProductService:
 
         return result
 
-    def search_products_with_multi_modal(self, query_text, image_url, category, top_k: int) -> dict[str, Any]:
-        text_query_vector = self.ai_model.encode_text(query_text).tolist() if query_text else None
-        image_query_vector = self.ai_model.encode_image(image_url).tolist() if image_url else None
+    async def search_products_with_multi_modal(self, query_text, image_url, category, top_k: int) -> dict[str, Any]:
+        text_query_vector = (await self._encode_text(query_text)).tolist() if query_text else None
+        image_query_vector = (await self._encode_image(image_url)).tolist() if image_url else None
         return self.vector_repo.query_multi_modal(text_query_vector, image_query_vector, category=category, top_k=top_k)
 
     def upsert_point(self, point_id: int, vector: list[float], payload: dict):
@@ -89,7 +92,7 @@ class ProductService:
         # Oversampling: Lấy dư dữ liệu để RRF có không gian hòa trộn
         # Với limit=10, chúng ta sẽ lấy 30 thằng từ mỗi bên
         fetch_limit = limit * 3
-        text_query_vector = self._encode_text_to_vector(query_text)
+        text_query_vector = (await self._encode_text(query_text)).tolist() if query_text else None
 
         # 1. Chạy song song để tối ưu Mac M3
         vector_task = self.vector_repo.query_multi_modal(text_query_vector, None, top_k=fetch_limit)
@@ -104,7 +107,8 @@ class ProductService:
         # Rank từ Qdrant
         vector_weight = 1
         for rank, hit in enumerate(vector_results.get("results", []), start=1):
-            pid = str(hit["id"])
+            # pid = str(hit["id"])
+            pid = hit["id"]
             score = (1.0 / (k + rank)) * vector_weight
             rrf_scores[pid] = rrf_scores.get(pid, 0) + score
 
@@ -112,7 +116,8 @@ class ProductService:
         # db_results: [{'id': 432534, 'score': 1.25}, {'id': 466692, 'score': 1.25}]
         text_weight = 1
         for rank, hit in enumerate(keyword_results, start=1):
-            pid = str(hit["id"])
+            # pid = str(hit["id"])
+            pid = hit["id"]
             score = (1.0 / (k + rank)) * text_weight
             rrf_scores[pid] = rrf_scores.get(pid, 0) + score
 
@@ -165,9 +170,6 @@ class ProductService:
         ):
             yield json.dumps({"type": "chunk", "content": chunk}) + "\n"
 
-    def _encode_text_to_vector(self, text: str):
-        return self.ai_model.encode_text(text).tolist() if text else None
-
     async def _build_rag_context(self, query_text: str, limit: int):
         """Shared retrieval + prompt-building for rag_search and rag_search_stream.
 
@@ -209,3 +211,11 @@ class ProductService:
     """
 
         return products, system_prompt, user_prompt
+
+    async def _encode_text(self, text: str):
+        model = await self.model_manager.get_model("clip-multimodal")
+        return await model.encode(text=text)
+
+    async def _encode_image(self, image_url: str):
+        model = await self.model_manager.get_model("clip-multimodal")
+        return await model.encode(image=image_url)

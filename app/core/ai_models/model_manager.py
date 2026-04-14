@@ -1,6 +1,7 @@
 import asyncio
 
 from app.core.ai_models.embedding_provider import EmbeddingProvider
+from app.core.ai_models.models_config import MODEL_DEFINITIONS
 
 
 class ModelManager:
@@ -11,7 +12,10 @@ class ModelManager:
         self._loaded_instances: dict[str, EmbeddingProvider] = {}
         self._lock = asyncio.Lock()
 
-    def load_definitions(self, definitions: dict):
+    def load_definitions(self, definitions: dict = None):
+        if definitions is None:
+            definitions = MODEL_DEFINITIONS
+
         for name, params in definitions.items():
             self.register_model(name, params["provider_cls"], **params["config"])
 
@@ -57,7 +61,3 @@ class ModelManager:
 
         self._loaded_instances.clear()
         print("[INFO] ModelManager: All instances have been safely unloaded.")
-
-
-# Khởi tạo một Manager duy nhất cho toàn hệ thống
-model_manager = ModelManager()

@@ -33,6 +33,10 @@ class AsyncProductVectorRepository(ProductVectorBase):
 
         return self._format_results(results.points, start_time)
 
+    async def upsert_batch(self, points: list[models.PointStruct]) -> Any:
+        """Subclass phải tự implement logic đẩy data"""
+        await self.qdrant_db.upsert(collection_name=self.current_alias_name, points=points)
+
     async def _excute_single_query(self, prefetch: models.Prefetch, top_k: int) -> models.QueryResponse:
         results = await self.qdrant_db.query_points(
             collection_name=self.current_alias_name,
