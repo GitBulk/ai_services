@@ -40,6 +40,13 @@ app = FastAPI(title=settings.PROJECT_NAME, description="Nova AI", version="1.0",
 
 # add middlewares
 # app.add_middleware(TracingMiddleware)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(nova_router, prefix="/api/v1", tags=["Nova Analysis"])
 
 

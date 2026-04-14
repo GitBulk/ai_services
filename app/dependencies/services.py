@@ -21,6 +21,13 @@ def get_llm_service() -> LLMService:
     return LLMService()
 
 
+@lru_cache
+def get_auth_service() -> AuthService:
+    return AuthService()
+
+
+# get_product_service takes arguments (the injected dependencies), so @lru_cache won't work on it.
+# use plain factory function Annotated[ProductService, Depends(get_product_service)] instead.
 def get_product_service(
     product_repo: Annotated[ProductRepository, Depends(get_product_repository)],
     vector_repo: Annotated[AsyncProductVectorRepository, Depends(get_async_product_vector_repository)],
@@ -31,3 +38,4 @@ def get_product_service(
 
 
 InjectedProductService = Annotated[ProductService, Depends(get_product_service)]
+InjectedAuthService = Annotated[AuthService, Depends(get_auth_service)]
